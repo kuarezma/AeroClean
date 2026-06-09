@@ -168,30 +168,72 @@ body.theme-settings {
   background: none;
   border: none;
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.65);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 12.5px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 3px solid transparent !important;
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   color: #ffffff;
 }
 
 .nav-btn.active {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
   font-weight: 700;
 }
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 11px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Color coding for icons */
+.nav-btn[data-tab="dashboard"] .nav-icon { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+.nav-btn[data-tab="system-clean"] .nav-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.nav-btn[data-tab="large-files"] .nav-icon { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.nav-btn[data-tab="startups"] .nav-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.nav-btn[data-tab="uninstaller"] .nav-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.nav-btn[data-tab="developer"] .nav-icon { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+.nav-btn[data-tab="settings"] .nav-icon { background: rgba(161, 161, 170, 0.1); color: #a1a1aa; }
+
+/* Active states with side border indicators and glowing tiles */
+.nav-btn[data-tab="dashboard"].active { border-left-color: #a855f7 !important; }
+.nav-btn[data-tab="dashboard"].active .nav-icon { background: #a855f7 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(168, 85, 247, 0.4); }
+
+.nav-btn[data-tab="system-clean"].active { border-left-color: #10b981 !important; }
+.nav-btn[data-tab="system-clean"].active .nav-icon { background: #10b981 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+
+.nav-btn[data-tab="large-files"].active { border-left-color: #f97316 !important; }
+.nav-btn[data-tab="large-files"].active .nav-icon { background: #f97316 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(249, 115, 22, 0.4); }
+
+.nav-btn[data-tab="startups"].active { border-left-color: #3b82f6 !important; }
+.nav-btn[data-tab="startups"].active .nav-icon { background: #3b82f6 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+
+.nav-btn[data-tab="uninstaller"].active { border-left-color: #ef4444 !important; }
+.nav-btn[data-tab="uninstaller"].active .nav-icon { background: #ef4444 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+
+.nav-btn[data-tab="developer"].active { border-left-color: #ec4899 !important; }
+.nav-btn[data-tab="developer"].active .nav-icon { background: #ec4899 !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(236, 72, 153, 0.4); }
+
+.nav-btn[data-tab="settings"].active { border-left-color: #a1a1aa !important; }
+.nav-btn[data-tab="settings"].active .nav-icon { background: #a1a1aa !important; color: #ffffff !important; box-shadow: 0 0 8px rgba(161, 161, 170, 0.4); }
 
 .sidebar-footer {
   margin-top: auto;

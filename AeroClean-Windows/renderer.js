@@ -223,6 +223,14 @@ function updateDashboard() {
   const usedPercent = ((used / diskSpace.total) * 100).toFixed(1);
   const usedGB = (used / (1024*1024*1024)).toFixed(1);
 
+  // Dynamic Date Badge update
+  const dateBadge = document.querySelector('.date-badge');
+  if (dateBadge) {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const dateStr = new Date().toLocaleDateString('tr-TR', options);
+    dateBadge.innerText = `${dateStr}'den itibaren`;
+  }
+
   // Card 1: PC Health
   const healthUsedRatio = document.getElementById('health-used-ratio');
   if (healthUsedRatio) {
@@ -233,29 +241,116 @@ function updateDashboard() {
     healthBarFill.style.width = `${usedPercent}%`;
   }
 
+  // Calculate actual categories sizes if scanned
+  const isScanned = categories.length > 0;
+  
+  let sysJunk = 0;
+  let filesSize = 0;
+  let appsSize = 0;
+  
+  if (isScanned) {
+    // 1. System Junk: systemCache, systemLogs, trash, timeMachineSnapshots
+    const sysJunkCats = ['systemCache', 'systemLogs', 'trash', 'timeMachineSnapshots'];
+    sysJunk = categories
+      .filter(c => sysJunkCats.includes(c.category))
+      .reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.size, 0), 0);
+      
+    // 2. Personal Files: largeFiles
+    filesSize = largeFiles.reduce((sum, f) => sum + f.size, 0);
+    
+    // 3. Applications: spotifyCache, chromeCache, npmCache, cargoCache, pipCache
+    const appCats = ['spotifyCache', 'chromeCache', 'npmCache', 'cargoCache', 'pipCache'];
+    appsSize = categories
+      .filter(c => appCats.includes(c.category))
+      .reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.size, 0), 0);
+  }
+  
+  const cleanableTotal = sysJunk + filesSize + appsSize;
+
   // Card 2: Local Storage Cleaned
   const cleanedTotalSize = document.getElementById('cleaned-total-size');
   const cleanedStatusBadge = document.getElementById('cleaned-status-badge');
-  if (cleanedAmount > 0) {
+  const cleanedTitle = document.querySelector('.card-cleaned .card-header-mini span');
+  const hasCleaned = cleanedAmount > 0;
+  
+  if (cleanedTitle) {
+    cleanedTitle.innerText = hasCleaned ? "Temizlenen Disk Alanı" : "Temizlenebilir Disk Alanı";
+  }
+  
+  if (hasCleaned) {
     if (cleanedTotalSize) cleanedTotalSize.innerText = formatSize(cleanedAmount);
-    if (cleanedStatusBadge) cleanedStatusBadge.innerText = `▲ ${formatSize(cleanedAmount)} serbest kaldı`;
+    if (cleanedStatusBadge) {
+      cleanedStatusBadge.innerText = `▲ ${formatSize(cleanedAmount)} serbest kaldı`;
+      cleanedStatusBadge.style.color = "#10b981";
+    }
   } else {
-    if (cleanedTotalSize) cleanedTotalSize.innerText = "205,12 GB";
-    if (cleanedStatusBadge) cleanedStatusBadge.innerText = "▲ 152 GB serbest kaldı";
+    if (cleanedTotalSize) cleanedTotalSize.innerText = isScanned ? formatSize(cleanableTotal) : "0 KB";
+    if (cleanedStatusBadge) {
+      cleanedStatusBadge.innerText = isScanned ? `▲ ${formatSize(cleanableTotal)} temizlenebilir` : "Tarama yapılmadı";
+      cleanedStatusBadge.style.color = isScanned ? "#f97316" : "#a1a1aa";
+    }
   }
 
-  // Calculate breakdown sizes
-  const cleanableSystemData = categories
-    .filter(c => Object.keys(categoriesConfig).includes(c.category))
-    .reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.size, 0), 0);
+  // Card 3: Total Time Saved
+  const timeSavedTitle = document.getElementById('time-saved-title');
+  const timeSavedBadge = document.getElementById('time-saved-badge');
   
-  const totalUsed = Math.max(used, 1);
-  const appsSize = totalUsed * 0.25;
-  const filesSize = Math.max(totalUsed - cleanableSystemData - appsSize, 0);
+  const disabledStartups = startupItems.filter(i => !i.isEnabled).length;
+  const sysJunkMB = sysJunk / (1024 * 1024);
+  const cleanedMB = cleanedAmount / (1024 * 1024);
+  const totalMinutes = (sysJunkMB * 0.1) + (cleanedMB * 0.2) + (disabledStartups * 15);
+  const minutesInt = Math.max(Math.round(totalMinutes), 0);
+  
+  if (timeSavedTitle) timeSavedTitle.innerText = formatTimeSaved(minutesInt);
+  
+  if (timeSavedBadge) {
+    if (hasCleaned) {
+      timeSavedBadge.innerText = `▲ ${formatTimeSaved(Math.round(cleanedMB * 0.2))} tasarruf edildi`;
+      timeSavedBadge.style.color = "#10b981";
+    } else if (isScanned) {
+      timeSavedBadge.innerText = `▲ ${formatTimeSaved(Math.round(sysJunkMB * 0.1))} tasarruf edilebilir`;
+      timeSavedBadge.style.color = "#f97316";
+    } else {
+      timeSavedBadge.innerText = "Tarama yapılmadı";
+      timeSavedBadge.style.color = "#a1a1aa";
+    }
+  }
 
-  const sysPct = (cleanableSystemData / totalUsed) * 100;
-  const filesPct = (filesSize / totalUsed) * 100;
-  const appsPct = (appsSize / totalUsed) * 100;
+  // Breakdown details below graph
+  const breakdownTimeSystem = document.getElementById('breakdown-time-system');
+  const breakdownTimeCleaned = document.getElementById('breakdown-time-cleaned');
+  const breakdownTimeStartups = document.getElementById('breakdown-time-startups');
+  if (breakdownTimeSystem) breakdownTimeSystem.innerText = `• Sistem Temizliği: + ${formatTimeSaved(Math.round(sysJunkMB * 0.1))}`;
+  if (breakdownTimeCleaned) breakdownTimeCleaned.innerText = `• Kazanılan Zaman (Temizlik): + ${formatTimeSaved(Math.round(cleanedMB * 0.2))}`;
+  if (breakdownTimeStartups) breakdownTimeStartups.innerText = `• Başlangıç Optimizasyonu: + ${formatTimeSaved(disabledStartups * 15)}`;
+
+  // Card 5: Malware Scan
+  const securityScannedTitle = document.getElementById('security-scanned-title');
+  const securityStatusBadge = document.getElementById('security-status-badge');
+  
+  if (securityScannedTitle) {
+    if (isScanned) {
+      const totalItemsScanned = categories.reduce((sum, c) => sum + c.items.length, 0) + largeFiles.length + startupItems.length + installedApps.length;
+      securityScannedTitle.innerText = `${totalItemsScanned} Öge`;
+    } else {
+      securityScannedTitle.innerText = "0 Öge";
+    }
+  }
+  
+  if (securityStatusBadge) {
+    if (isScanned) {
+      securityStatusBadge.innerText = "▲ Tarandı ve Güvenli";
+      securityStatusBadge.style.color = "#10b981";
+    } else {
+      securityStatusBadge.innerText = "Tarama yapılmadı";
+      securityStatusBadge.style.color = "#a1a1aa";
+    }
+  }
+
+  // Calculate breakdown proportions
+  const sysPct = cleanableTotal > 0 ? (sysJunk / cleanableTotal) * 100 : 0;
+  const filesPct = cleanableTotal > 0 ? (filesSize / cleanableTotal) * 100 : 0;
+  const appsPct = cleanableTotal > 0 ? (appsSize / cleanableTotal) * 100 : 0;
 
   // Update segmented bar
   const segFillSystem = document.getElementById('seg-fill-system');
@@ -269,7 +364,7 @@ function updateDashboard() {
   const breakdownSystem = document.getElementById('breakdown-system');
   const breakdownPersonal = document.getElementById('breakdown-personal');
   const breakdownApps = document.getElementById('breakdown-apps');
-  if (breakdownSystem) breakdownSystem.innerText = formatSize(cleanableSystemData);
+  if (breakdownSystem) breakdownSystem.innerText = formatSize(sysJunk);
   if (breakdownPersonal) breakdownPersonal.innerText = formatSize(filesSize);
   if (breakdownApps) breakdownApps.innerText = formatSize(appsSize);
 }
@@ -1170,4 +1265,17 @@ function formatSize(bytes) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function formatTimeSaved(minutes) {
+  if (minutes <= 0) return "0 Dakika";
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const mins = minutes % 60;
+  
+  let result = "";
+  if (days > 0) result += `${days} Gün `;
+  if (hours > 0) result += `${hours} Saat `;
+  if (mins > 0 || result === "") result += `${mins} Dakika`;
+  return result.trim();
 }

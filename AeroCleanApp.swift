@@ -137,29 +137,49 @@ struct SidebarButton: View {
     let action: () -> Void
     @State private var isHovered = false
     
+    var tabColor: Color {
+        switch tab {
+        case .dashboard: return .purple
+        case .systemClean: return .green
+        case .largeFiles: return .orange
+        case .startups: return .blue
+        case .uninstaller: return .red
+        case .developer: return .pink
+        case .settings: return .gray
+        }
+    }
+    
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
+                // Active indicator capsule on the far left
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(isSelected ? tabColor : Color.clear)
+                    .frame(width: 3, height: 16)
+                
+                // Icon tile
                 Image(systemName: tab.iconName)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .secondary)
-                    .frame(width: 20)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : tabColor)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(isSelected ? tabColor : tabColor.opacity(0.1))
+                    )
+                    .shadow(color: isSelected ? tabColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
                 
                 Text(tab.rawValue)
                     .font(.system(size: 12.5, weight: isSelected ? .bold : .medium))
-                    .foregroundColor(isSelected ? .white : .primary)
+                    .foregroundColor(isSelected ? .white : .primary.opacity(0.85))
                 
                 Spacer()
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .padding(.leading, 4)
+            .padding(.trailing, 10)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? Color.white.opacity(0.12) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Color.white.opacity(0.08) : Color.clear, lineWidth: 0.8)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.white.opacity(0.06) : (isHovered ? Color.white.opacity(0.03) : Color.clear))
             )
         }
         .buttonStyle(PlainButtonStyle())

@@ -37,25 +37,25 @@
 
       <nav class="sidebar-nav">
         <button class="nav-btn active" data-tab="dashboard">
-          <span class="nav-icon">📊</span> Dashboard
+          <span class="nav-icon icon-dashboard">📊</span> Dashboard
         </button>
         <button class="nav-btn" data-tab="system-clean">
-          <span class="nav-icon">⚙️</span> Sistem Verileri
+          <span class="nav-icon icon-system">⚙️</span> Sistem Verileri
         </button>
         <button class="nav-btn" data-tab="large-files">
-          <span class="nav-icon">📂</span> Büyük Dosyalar
+          <span class="nav-icon icon-large">📂</span> Büyük Dosyalar
         </button>
         <button class="nav-btn" data-tab="startups">
-          <span class="nav-icon">⚡</span> Başlangıç Öğeleri
+          <span class="nav-icon icon-startups">⚡</span> Başlangıç Öğeleri
         </button>
         <button class="nav-btn" data-tab="uninstaller">
-          <span class="nav-icon">📦</span> Uygulama Kaldırıcı
+          <span class="nav-icon icon-uninstaller">📦</span> Uygulama Kaldırıcı
         </button>
         <button class="nav-btn" data-tab="developer">
-          <span class="nav-icon">🛠️</span> Geliştirici
+          <span class="nav-icon icon-developer">🛠️</span> Geliştirici
         </button>
         <button class="nav-btn" data-tab="settings">
-          <span class="nav-icon">🔧</span> Ayarlar & Yardım
+          <span class="nav-icon icon-settings">🔧</span> Ayarlar & Yardım
         </button>
       </nav>
 
@@ -143,14 +143,14 @@
                 <span>Temizlenen Disk Alanı</span>
                 <span class="info-icon">ℹ️</span>
               </div>
-              <h2 class="card-large-title" id="cleaned-total-size">205,12 GB</h2>
-              <p class="card-green-badge" id="cleaned-status-badge">▲ 152 GB serbest kaldı</p>
+              <h2 class="card-large-title" id="cleaned-total-size">0 KB</h2>
+              <p class="card-green-badge" id="cleaned-status-badge" style="color: #a1a1aa;">Tarama yapılmadı</p>
               
               <!-- Proportional Segmented Progress Bar -->
               <div class="segmented-bar-wrapper">
-                <div class="segmented-bar-fill seg-green" id="seg-fill-system" style="width: 25%"></div>
-                <div class="segmented-bar-fill seg-blue" id="seg-fill-personal" style="width: 50%"></div>
-                <div class="segmented-bar-fill seg-purple" id="seg-fill-apps" style="width: 25%"></div>
+                <div class="segmented-bar-fill seg-green" id="seg-fill-system" style="width: 0%"></div>
+                <div class="segmented-bar-fill seg-blue" id="seg-fill-personal" style="width: 0%"></div>
+                <div class="segmented-bar-fill seg-purple" id="seg-fill-apps" style="width: 0%"></div>
               </div>
 
               <div class="breakdown-list">
@@ -178,8 +178,8 @@
                 <span>Güvenlik & Tehditler</span>
                 <span class="info-icon">ℹ️</span>
               </div>
-              <h2 class="card-large-title">1 Milyon Öge</h2>
-              <p class="card-green-badge">▲ Tarandı ve Güvenli</p>
+              <h2 class="card-large-title" id="security-scanned-title">0 Öge</h2>
+              <p class="card-green-badge" id="security-status-badge">Tarama yapılmadı</p>
               
               <div class="security-history-row">
                 <span class="sec-badge">🖐️</span>
@@ -196,8 +196,8 @@
                 <span>Kazanılan Toplam Zaman</span>
                 <span class="info-icon">ℹ️</span>
               </div>
-              <h2 class="card-large-title">7 Gün 12 Saat</h2>
-              <p class="card-green-badge">▲ 4 Gün 22 Saat tasarruf</p>
+              <h2 class="card-large-title" id="time-saved-title">0 Dakika</h2>
+              <p class="card-green-badge" id="time-saved-badge">Tarama yapılmadı</p>
               
               <!-- Curved Graph representation inside SVG -->
               <div class="graph-svg-wrapper">
@@ -215,9 +215,9 @@
 
               <div class="time-breakdown">
                 <span class="time-breakdown-title">Etkinlik Zamanı</span>
-                <p>• Sistem Temizliği: + 6g 20sa</p>
-                <p>• Kaldırılan Uygulamalar: + 1g 38sa</p>
-                <p>• Çöp Artıkları Temizliği: + 1sa 35d</p>
+                <p id="breakdown-time-system">• Sistem Temizliği: + 0d</p>
+                <p id="breakdown-time-cleaned">• Kazanılan Zaman (Temizlik): + 0d</p>
+                <p id="breakdown-time-startups">• Başlangıç Optimizasyonu: + 0d</p>
               </div>
             </div>
 

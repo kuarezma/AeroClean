@@ -4,7 +4,14 @@ struct DashboardView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        VStack(spacing: 16) {
+        let formattedDate: String = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "tr_TR")
+            formatter.dateFormat = "d MMMM yyyy'den itibaren'"
+            return formatter.string(from: Date())
+        }()
+        
+        return VStack(spacing: 16) {
             // Header: "Aktivite Özetim" (My Activity) & Date
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -17,7 +24,7 @@ struct DashboardView: View {
                 }
                 Spacer()
                 
-                Text("9 Haziran 2026'dan itibaren")
+                Text(formattedDate)
                     .font(.caption)
                     .bold()
                     .padding(.horizontal, 10)
@@ -151,12 +158,37 @@ struct DashboardView: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.04), lineWidth: 0.8))
                 }
                 
-                // Column 2: Storage Cleaned & Malware Status
                 VStack(spacing: 16) {
                     // Card 2: Local Storage Cleaned
+                    let hasCleaned = appState.cleanedAmount > 0
+                    
+                    let scannedSystemJunk = appState.hasScanned ? Double(
+                        appState.categories.filter {
+                            [.systemCache, .systemLogs, .trash, .timeMachineSnapshots, .mailDownloads].contains($0.category)
+                        }.reduce(0) { $0 + $1.totalSize }
+                    ) : 0.0
+                    
+                    let scannedFiles = appState.hasScanned ? Double(
+                        appState.largeFiles.reduce(0) { $0 + $1.size } +
+                        (appState.categories.first(where: { $0.category == .downloads })?.totalSize ?? 0)
+                    ) : 0.0
+                    
+                    let scannedApps = appState.hasScanned ? Double(
+                        appState.categories.filter {
+                            [.appSupportLeftovers, .spotifyCache, .chromeCache, .xcodeSimulators, .xcodeDerivedData, .packageCaches].contains($0.category)
+                        }.reduce(0) { $0 + $1.totalSize }
+                    ) : 0.0
+                    
+                    let cleanableSize = Int64(scannedSystemJunk + scannedFiles + scannedApps)
+                    
+                    let titleLabel = hasCleaned ? "Temizlenen Disk Alanı" : "Temizlenebilir Disk Alanı"
+                    let displaySize = hasCleaned ? formatSize(appState.cleanedAmount) : (appState.hasScanned ? formatSize(cleanableSize) : "0 KB")
+                    let badgeLabel = hasCleaned ? "▲ \(formatSize(appState.cleanedAmount)) serbest kaldı" : (appState.hasScanned ? "▲ \(formatSize(cleanableSize)) temizlenebilir" : "Tarama yapılmadı")
+                    let badgeColor: Color = hasCleaned ? .green : (appState.hasScanned ? .orange : .secondary)
+
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Temizlenen Disk Alanı")
+                            Text(titleLabel)
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.secondary)
                             Spacer()
@@ -165,30 +197,26 @@ struct DashboardView: View {
                                 .font(.caption2)
                         }
                         
-                        // Freed space size
-                        let cleanSize = appState.cleanedAmount > 0 ? formatSize(appState.cleanedAmount) : "205,12 GB"
-                        Text(cleanSize)
+                        Text(displaySize)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
-                        Text("▲ \(appState.cleanedAmount > 0 ? formatSize(appState.cleanedAmount) : "152 GB") serbest kaldı")
+                        Text(badgeLabel)
                             .font(.caption2)
                             .bold()
-                            .foregroundColor(.green)
+                            .foregroundColor(badgeColor)
                         
                         Spacer()
                         
                         // Live disk spaces math
-                        let sysJunk = Double(appState.systemDataSize)
-                        let totalUsed = max(Double(appState.usedSpace), 1.0)
+                        let sysJunk = scannedSystemJunk
+                        let filesSize = scannedFiles
+                        let appsSize = scannedApps
                         
-                        // Mock applications size as roughly 25% of used space to avoid blocking scan
-                        let appsSize = totalUsed * 0.25
-                        let filesSize = max(totalUsed - sysJunk - appsSize, 0.0)
-                        
-                        let sysPct = sysJunk / totalUsed
-                        let filesPct = filesSize / totalUsed
-                        let appsPct = appsSize / totalUsed
+                        let totalCleanable = sysJunk + filesSize + appsSize
+                        let sysPct = totalCleanable > 0 ? sysJunk / totalCleanable : 0.0
+                        let filesPct = totalCleanable > 0 ? filesSize / totalCleanable : 0.0
+                        let appsPct = totalCleanable > 0 ? appsSize / totalCleanable : 0.0
                         
                         // Proportional segment bar
                         SegmentedProgressBar(systemJunkPercent: sysPct, personalFilesPercent: filesPct, appsPercent: appsPct)
@@ -221,14 +249,15 @@ struct DashboardView: View {
                                 .font(.caption2)
                         }
                         
-                        Text("1 Milyon Öge")
+                        let totalItemsScanned = appState.hasScanned ? (appState.categories.reduce(0) { $0 + $1.items.count } + appState.largeFiles.count + appState.startupItems.count) : 0
+                        Text(appState.hasScanned ? "\(totalItemsScanned) Öge" : "0 Öge")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("▲ Tarandı ve Güvenli")
+                        Text(appState.hasScanned ? "▲ Tarandı ve Güvenli" : "Tarama yapılmadı")
                             .font(.caption2)
                             .bold()
-                            .foregroundColor(.green)
+                            .foregroundColor(appState.hasScanned ? .green : .secondary)
                         
                         Spacer()
                         
@@ -237,7 +266,7 @@ struct DashboardView: View {
                                 .font(.caption)
                                 .foregroundColor(.white)
                                 .frame(width: 20, height: 20)
-                                .background(Color.pink)
+                                .background(appState.hasScanned ? Color.pink : Color.gray)
                                 .clipShape(Circle())
                             
                             Text("Tehdit Geçmişi: 0 zararlı öge")
@@ -256,6 +285,18 @@ struct DashboardView: View {
                 // Column 3: Time Saved & Cloud Cleanup
                 VStack(spacing: 16) {
                     // Card 3: Total Time Saved
+                    let sysJunkMB = Double(appState.systemDataSize) / (1024 * 1024)
+                    let cleanedMB = Double(appState.cleanedAmount) / (1024 * 1024)
+                    let disabledStartups = appState.startupItems.filter { !$0.isEnabled }.count
+                    let hasCleaned = appState.cleanedAmount > 0
+                    
+                    let totalMinutes = (sysJunkMB * 0.1) + (cleanedMB * 0.2) + Double(disabledStartups * 15)
+                    let minutesInt = max(Int(totalMinutes), 0)
+                    let timeSavedStr = formatTimeSavedText(minutesInt)
+                    
+                    let timeBadgeStr = hasCleaned ? "▲ \(formatTimeSavedText(Int(cleanedMB * 0.2))) tasarruf edildi" : (appState.hasScanned ? "▲ \(formatTimeSavedText(Int(sysJunkMB * 0.1))) tasarruf edilebilir" : "Tarama yapılmadı")
+                    let timeBadgeColor: Color = hasCleaned ? .green : (appState.hasScanned ? .orange : .secondary)
+
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Kazanılan Toplam Zaman")
@@ -267,14 +308,14 @@ struct DashboardView: View {
                                 .font(.caption2)
                         }
                         
-                        Text("7 Gün 12 Saat")
+                        Text(timeSavedStr)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
-                        Text("▲ 4 Gün 22 Saat tasarruf")
+                        Text(timeBadgeStr)
                             .font(.caption2)
                             .bold()
-                            .foregroundColor(.green)
+                            .foregroundColor(timeBadgeColor)
                         
                         // Curved SVG Graph Line representation
                         CurveGraphView()
@@ -289,13 +330,13 @@ struct DashboardView: View {
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundColor(.secondary)
                             
-                            Text("• Sistem Temizliği: + 6g 20sa")
+                            Text("• Sistem Temizliği: + \(formatTimeSavedText(Int(sysJunkMB * 0.1)))")
                                 .font(.system(size: 9))
                                 .foregroundColor(.primary)
-                            Text("• Kaldırılan Uygulamalar: + 1g 38sa")
+                            Text("• Kazanılan Zaman (Temizlik): + \(formatTimeSavedText(Int(cleanedMB * 0.2)))")
                                 .font(.system(size: 9))
                                 .foregroundColor(.primary)
-                            Text("• Çöp Artıkları Temizliği: + 1sa 35d")
+                            Text("• Başlangıç Optimizasyonu: + \(formatTimeSavedText(disabledStartups * 15))")
                                 .font(.system(size: 9))
                                 .foregroundColor(.primary)
                         }
@@ -391,17 +432,23 @@ struct SegmentedProgressBar: View {
     var body: some View {
         GeometryReader { geo in
             HStack(spacing: 1.5) {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.green)
-                    .frame(width: max(geo.size.width * CGFloat(systemJunkPercent), 6))
+                if systemJunkPercent > 0 {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.green)
+                        .frame(width: max(geo.size.width * CGFloat(systemJunkPercent), 6))
+                }
                 
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.blue)
-                    .frame(width: max(geo.size.width * CGFloat(personalFilesPercent), 6))
+                if personalFilesPercent > 0 {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.blue)
+                        .frame(width: max(geo.size.width * CGFloat(personalFilesPercent), 6))
+                }
                 
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.purple)
-                    .frame(width: max(geo.size.width * CGFloat(appsPercent), 6))
+                if appsPercent > 0 {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.purple)
+                        .frame(width: max(geo.size.width * CGFloat(appsPercent), 6))
+                }
             }
         }
         .frame(height: 6)
@@ -463,4 +510,17 @@ struct CurveGraphView: View {
 
 func formatSize(_ bytes: Int64) -> String {
     ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+}
+
+func formatTimeSavedText(_ minutes: Int) -> String {
+    if minutes <= 0 { return "0 Dakika" }
+    let days = minutes / 1440
+    let hours = (minutes % 1440) / 60
+    let mins = minutes % 60
+    
+    var result = ""
+    if days > 0 { result += "\(days) Gün " }
+    if hours > 0 { result += "\(hours) Saat " }
+    if mins > 0 || result.isEmpty { result += "\(mins) Dakika" }
+    return result.trimmingCharacters(in: .whitespaces)
 }
