@@ -70,5 +70,16 @@ The script will:
 
 ---
 
+## 📅 Changelog
+
+### v1.5.1
+- **Taşınabilirlik:** `build.sh` içindeki mutlak ikon yolu düzeltildi, yerel `./icon.png` dosyası varsayılan yapıldı.
+- **Arayüz Görsel Uyum:** Kaldırıcı (Uninstaller) arayüzündeki mavi arka plan renk geçişi yan menüdeki kırmızı tema rengiyle uyumlu koyu kırmızı/kestane tonlarına güncellendi.
+- **Hata Yönetimi:** Uygulama silme hatası (yetersiz izinler) durumunda başarılı uyarısı gösterilmesi yerine hata ekranı tetiklenmesi ve el ile silme yönlendirmesi eklendi.
+- **Güvenli Silme:** Time Machine snapshot isimlerini çözümlemek için regex tabanlı parser eklendi ve silme komutunun durum kodları doğrulanarak yetki hataları yakalandı.
+- **DevOps/CI-CD:** Windows Electron derleme yükleyicilerinin (.exe ve .msi) GitHub Release sayfasına otomatik yayımlanması için dağıtım adımı eklendi.
+
+---
+
 ## 📝 License & Credits
 Developed by **Uğur Yaşayan**. All rights reserved. Built as a native SwiftUI utility for macOS.
