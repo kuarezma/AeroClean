@@ -65,5 +65,31 @@ swiftc -O -parse-as-library \
     SettingsView.swift \
     AeroCleanApp.swift
 
-echo "=== Build Complete: ${BUNDLE_DIR} created successfully ==="
-echo "You can open it by typing: open ${BUNDLE_DIR}"
+# 5. Ad-hoc Codesign
+echo "Signing the application bundle (ad-hoc codesign)..."
+codesign --force --deep --sign - "${BUNDLE_DIR}"
+
+# 6. Create distributable installer DMG image
+echo "Creating distributable installer DMG image..."
+DMG_TEMP="dmg_temp"
+rm -rf "${DMG_TEMP}"
+mkdir -p "${DMG_TEMP}"
+
+# Copy app bundle to temp
+cp -R "${BUNDLE_DIR}" "${DMG_TEMP}/"
+
+# Create Applications folder symlink
+ln -s /Applications "${DMG_TEMP}/Applications"
+
+# Create DMG file
+rm -f "${APP_NAME}.dmg"
+hdiutil create -volname "${APP_NAME}" -srcfolder "${DMG_TEMP}" -ov -format UDZO "${APP_NAME}.dmg"
+
+# Cleanup temp directory
+rm -rf "${DMG_TEMP}"
+
+echo "=== Build Complete ==="
+echo "Application: ${BUNDLE_DIR}"
+echo "Installer DMG: ${APP_NAME}.dmg"
+echo "You can launch the app with: open ${BUNDLE_DIR}"
+
