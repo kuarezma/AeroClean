@@ -59,6 +59,8 @@ class AppState: ObservableObject {
     // Cleaning Stats
     @Published var cleanedAmount: Int64 = 0
     @Published var showCleanSuccessAlert = false
+    @Published var showUninstallErrorAlert = false
+    @Published var uninstallErrorMsg = ""
     
     // Update States
     @Published var isCheckingForUpdates = false
@@ -376,13 +378,17 @@ class AppState: ObservableObject {
             let success = scanner.deleteItem(at: app.path)
             if success {
                 deletedBytes += app.size
+                
+                self.cleanedAmount = deletedBytes
+                self.selectedApp = nil
+                self.selectedAppLeftovers = []
+                self.isUninstallingApp = false
+                self.showCleanSuccessAlert = true
+            } else {
+                self.isUninstallingApp = false
+                self.uninstallErrorMsg = "Uygulama ana paketi (\(app.name).app) silinemedi. macOS güvenlik/izin kısıtlamaları nedeniyle uygulamayı silmek için yönetici izni gerekebilir. Lütfen uygulamayı Uygulamalar (/Applications) klasöründen el ile Çöp Kutusu'na taşıyarak kaldırın."
+                self.showUninstallErrorAlert = true
             }
-            
-            self.cleanedAmount = deletedBytes
-            self.selectedApp = nil
-            self.selectedAppLeftovers = []
-            self.isUninstallingApp = false
-            self.showCleanSuccessAlert = true
             
             // Rescan
             self.scanApps()

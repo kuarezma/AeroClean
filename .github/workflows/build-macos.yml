@@ -1,0 +1,112 @@
+name: Build macOS DMG (Signed & Notarized)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set Environment Variables
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "APP_VERSION=${VERSION}" >> $GITHUB_ENV
+
+    - name: Setup macOS Codesigning & Notarization
+      id: setup-signing
+      env:
+        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        APPLE_API_KEY_KEY: ${{ secrets.APPLE_API_KEY_KEY }}
+      run: |
+        if [ -n "$MACOS_CERTIFICATE" ] && [ -n "$MACOS_CERTIFICATE_PWD" ]; then
+          echo "Signing certificate provided. Preparing keychain..."
+          
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 14)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate p12
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN_PATH" -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          echo "HAS_CERTIFICATE=true" >> $GITHUB_ENV
+        else
+          echo "HAS_CERTIFICATE=false" >> $GITHUB_ENV
+          echo "Warning: MACOS_CERTIFICATE/MACOS_CERTIFICATE_PWD not found. The app will be ad-hoc signed."
+        fi
+
+        if [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER_ID" ] && [ -n "$APPLE_API_KEY_KEY" ]; then
+          echo "Notarization credentials provided."
+          echo "HAS_NOTARIZATION=true" >> $GITHUB_ENV
+          
+          # Write API Key file for notarytool
+          mkdir -p ~/.private_keys
+          echo "$APPLE_API_KEY_KEY" > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+        else
+          echo "HAS_NOTARIZATION=false" >> $GITHUB_ENV
+          echo "Warning: Notarization secrets (APPLE_API_KEY_ID/APPLE_API_ISSUER_ID/APPLE_API_KEY_KEY) not found. Notarization will be skipped."
+        fi
+
+    - name: Build macOS App Bundle
+      env:
+        UNIVERSAL: 'true'
+        SIGNING_IDENTITY: ${{ env.HAS_CERTIFICATE == 'true' && 'Developer ID Application' || '' }}
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Sign & Notarize DMG
+      if: env.HAS_CERTIFICATE == 'true'
+      env:
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+      run: |
+        echo "Signing DMG installer..."
+        codesign --force --sign "Developer ID Application" AeroClean.dmg
+
+        if [ "${{ env.HAS_NOTARIZATION }}" = "true" ]; then
+          echo "Submitting DMG to Apple Notarization Service..."
+          xcrun notarytool submit AeroClean.dmg \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --key "$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8" \
+            --wait
+
+          echo "Stapling notarization ticket to DMG..."
+          xcrun stapler staple AeroClean.dmg
+          echo "Validation verification:"
+          xcrun stapler validate AeroClean.dmg
+        fi
+
+    - name: Rename and Package DMG
+      run: |
+        cp AeroClean.dmg AeroClean-macOS-v${{ env.APP_VERSION }}.dmg
+        echo "Final files to release:"
+        ls -la AeroClean.dmg AeroClean-macOS-v${{ env.APP_VERSION }}.dmg
+
+    - name: Create or Update GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          AeroClean.dmg
+          AeroClean-macOS-v${{ env.APP_VERSION }}.dmg
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -28,8 +28,8 @@ struct ThemeBackgroundView: View {
             ]
         case .uninstaller:
             colors = [
-                Color(red: 0.02, green: 0.12, blue: 0.28),
-                Color(red: 0.01, green: 0.05, blue: 0.14)
+                Color(red: 0.22, green: 0.03, blue: 0.05),
+                Color(red: 0.10, green: 0.01, blue: 0.02)
             ]
         case .developer:
             colors = [

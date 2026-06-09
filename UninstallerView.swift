@@ -297,6 +297,13 @@ struct UninstallerView: View {
                 dismissButton: .default(Text("Tamam"))
             )
         }
+        .alert(isPresented: $appState.showUninstallErrorAlert) {
+            Alert(
+                title: Text("Kaldırma Başarısız"),
+                message: Text(appState.uninstallErrorMsg),
+                dismissButton: .default(Text("Tamam"))
+            )
+        }
     }
     
     // Helpers

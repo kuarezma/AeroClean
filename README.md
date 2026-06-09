@@ -25,9 +25,13 @@ Designed and developed by **Uğur Yaşayan**.
 2. Download the latest **`AeroClean.dmg`** installer.
 3. Double-click the DMG and drag **AeroClean** to your **Applications** folder.
 
-### 🛡️ Gatekeeper Warning (Ad-hoc Signature)
-Since the app is codesigned locally using an ad-hoc signature, macOS Gatekeeper may show a warning on first launch ("AeroClean is damaged and cannot be opened" or "Unidentified Developer"). 
-To launch the app:
+### 🛡️ Code Signing & Notarization (Official Release)
+The official releases downloaded from the [Releases](https://github.com/kuarezma/AeroClean/releases) page are **codesigned with an Apple Developer ID Certificate** and **notarized by Apple**. They will run immediately on any macOS machine without Gatekeeper warnings.
+
+### ⚠️ Local Build Gatekeeper Warning (Ad-hoc Signature)
+If you compile the application from source code locally, it will use an ad-hoc signature by default. In this case, macOS Gatekeeper may show a warning on first launch ("AeroClean is damaged and cannot be opened" or "Unidentified Developer"). 
+
+To run a locally compiled version:
 1. Right-click (or Control-click) **AeroClean.app** in your `/Applications` folder and select **Open**.
 2. Click **Open** in the confirmation dialog.
 *(Alternatively, you can run `xattr -cr /Applications/AeroClean.app` in Terminal to clear the quarantine flag).*

@@ -7,7 +7,7 @@ BUNDLE_DIR="${APP_NAME}.app"
 CONTENTS_DIR="${BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
-ICON_PNG="/Users/ugurmac/.gemini/antigravity/brain/5956f0c4-a5b2-4d79-a176-97b3aad13a5e/aeroclean_app_icon_1781016582456.png"
+ICON_PNG="icon.png"
 
 echo "=== Building ${APP_NAME}.app ==="
 
@@ -20,23 +20,32 @@ mkdir -p "${RESOURCES_DIR}"
 cp Info.plist "${CONTENTS_DIR}/Info.plist"
 
 # 3. Create macOS App Icon (.icns) from PNG
+# Determine icon source
+ICON_SRC=""
 if [ -f "${ICON_PNG}" ]; then
-    echo "Creating AppIcon.icns from generated PNG..."
+    ICON_SRC="${ICON_PNG}"
+elif [ -f "AeroClean-Windows/icon.png" ]; then
+    ICON_SRC="AeroClean-Windows/icon.png"
+    echo "Using fallback icon from AeroClean-Windows/icon.png"
+fi
+
+if [ -n "${ICON_SRC}" ]; then
+    echo "Creating AppIcon.icns from ${ICON_SRC}..."
     ICONSET_DIR="AppIcon.iconset"
     rm -rf "${ICONSET_DIR}"
     mkdir -p "${ICONSET_DIR}"
     
     # Generate all icon sizes required by macOS
-    sips -s format png -z 16 16     "${ICON_PNG}" --out "${ICONSET_DIR}/icon_16x16.png" > /dev/null
-    sips -s format png -z 32 32     "${ICON_PNG}" --out "${ICONSET_DIR}/icon_16x16@2x.png" > /dev/null
-    sips -s format png -z 32 32     "${ICON_PNG}" --out "${ICONSET_DIR}/icon_32x32.png" > /dev/null
-    sips -s format png -z 64 64     "${ICON_PNG}" --out "${ICONSET_DIR}/icon_32x32@2x.png" > /dev/null
-    sips -s format png -z 128 128   "${ICON_PNG}" --out "${ICONSET_DIR}/icon_128x128.png" > /dev/null
-    sips -s format png -z 256 256   "${ICON_PNG}" --out "${ICONSET_DIR}/icon_128x128@2x.png" > /dev/null
-    sips -s format png -z 256 256   "${ICON_PNG}" --out "${ICONSET_DIR}/icon_256x256.png" > /dev/null
-    sips -s format png -z 512 512   "${ICON_PNG}" --out "${ICONSET_DIR}/icon_256x256@2x.png" > /dev/null
-    sips -s format png -z 512 512   "${ICON_PNG}" --out "${ICONSET_DIR}/icon_512x512.png" > /dev/null
-    sips -s format png -z 1024 1024 "${ICON_PNG}" --out "${ICONSET_DIR}/icon_512x512@2x.png" > /dev/null
+    sips -s format png -z 16 16     "${ICON_SRC}" --out "${ICONSET_DIR}/icon_16x16.png" > /dev/null
+    sips -s format png -z 32 32     "${ICON_SRC}" --out "${ICONSET_DIR}/icon_16x16@2x.png" > /dev/null
+    sips -s format png -z 32 32     "${ICON_SRC}" --out "${ICONSET_DIR}/icon_32x32.png" > /dev/null
+    sips -s format png -z 64 64     "${ICON_SRC}" --out "${ICONSET_DIR}/icon_32x32@2x.png" > /dev/null
+    sips -s format png -z 128 128   "${ICON_SRC}" --out "${ICONSET_DIR}/icon_128x128.png" > /dev/null
+    sips -s format png -z 256 256   "${ICON_SRC}" --out "${ICONSET_DIR}/icon_128x128@2x.png" > /dev/null
+    sips -s format png -z 256 256   "${ICON_SRC}" --out "${ICONSET_DIR}/icon_256x256.png" > /dev/null
+    sips -s format png -z 512 512   "${ICON_SRC}" --out "${ICONSET_DIR}/icon_256x256@2x.png" > /dev/null
+    sips -s format png -z 512 512   "${ICON_SRC}" --out "${ICONSET_DIR}/icon_512x512.png" > /dev/null
+    sips -s format png -z 1024 1024 "${ICON_SRC}" --out "${ICONSET_DIR}/icon_512x512@2x.png" > /dev/null
     
     # Package into .icns
     iconutil -c icns "${ICONSET_DIR}" -o "${RESOURCES_DIR}/AppIcon.icns"
@@ -45,30 +54,36 @@ if [ -f "${ICON_PNG}" ]; then
     rm -rf "${ICONSET_DIR}"
     echo "AppIcon.icns created successfully."
 else
-    echo "Warning: Icon PNG not found at ${ICON_PNG}. App will build without custom icon."
+    echo "Warning: Icon PNG not found. App will build without custom icon."
 fi
 
 # 4. Compile Swift sources
 echo "Compiling Swift source files..."
-swiftc -O -parse-as-library \
-    -sdk "$(xcrun --show-sdk-path)" \
-    -target arm64-apple-macosx14.0 \
-    -o "${MACOS_DIR}/${APP_NAME}" \
-    CleanModel.swift \
-    AppState.swift \
-    ThemeBackgroundView.swift \
-    DashboardView.swift \
-    SystemCleanView.swift \
-    LargeFilesView.swift \
-    StartupsView.swift \
-    UninstallerView.swift \
-    DeveloperCleanView.swift \
-    SettingsView.swift \
-    AeroCleanApp.swift
+SWIFT_SOURCES="CleanModel.swift AppState.swift ThemeBackgroundView.swift DashboardView.swift SystemCleanView.swift LargeFilesView.swift StartupsView.swift UninstallerView.swift DeveloperCleanView.swift SettingsView.swift AeroCleanApp.swift"
 
-# 5. Ad-hoc Codesign
-echo "Signing the application bundle (ad-hoc codesign)..."
-codesign --force --deep --sign - "${BUNDLE_DIR}"
+if [ "$1" = "--universal" ] || [ "${UNIVERSAL}" = "true" ]; then
+    echo "Compiling for arm64..."
+    swiftc -O -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target arm64-apple-macosx14.0 -o "${MACOS_DIR}/${APP_NAME}_arm64" $SWIFT_SOURCES
+    
+    echo "Compiling for x86_64..."
+    swiftc -O -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target x86_64-apple-macosx14.0 -o "${MACOS_DIR}/${APP_NAME}_x86_64" $SWIFT_SOURCES
+    
+    echo "Creating Universal binary using lipo..."
+    lipo -create -output "${MACOS_DIR}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}_arm64" "${MACOS_DIR}/${APP_NAME}_x86_64"
+    rm -f "${MACOS_DIR}/${APP_NAME}_arm64" "${MACOS_DIR}/${APP_NAME}_x86_64"
+else
+    echo "Compiling for arm64..."
+    swiftc -O -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target arm64-apple-macosx14.0 -o "${MACOS_DIR}/${APP_NAME}" $SWIFT_SOURCES
+fi
+
+# 5. Codesign
+if [ -n "${SIGNING_IDENTITY}" ]; then
+    echo "Signing the application bundle with identity: ${SIGNING_IDENTITY} (Hardened Runtime)..."
+    codesign --force --options runtime --deep --sign "${SIGNING_IDENTITY}" "${BUNDLE_DIR}"
+else
+    echo "Signing the application bundle (ad-hoc codesign)..."
+    codesign --force --deep --sign - "${BUNDLE_DIR}"
+fi
 
 # 6. Create distributable installer DMG image
 echo "Creating distributable installer DMG image..."

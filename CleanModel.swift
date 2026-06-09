@@ -119,7 +119,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         case .trash:
             return "Dosyalar kalıcı olarak silinecektir. Çöpte geri almak isteyeceğiniz önemli bir dosya olmadığından emin olun."
         case .timeMachineSnapshots:
-            return "Mevcut yerel yedeklemeler silinir. Harici diskinizdeki Time Machine yedekleriniz kesinlikle etkilenmez. macOS yeni yedekleri almaya devam eder."
+            return "Mevcut yerel yedeklemeler silinir. Harici diskinizdeki Time Machine yedekleriniz kesinlikle etkilenmez. NOT: macOS güvenlik kısıtlamaları nedeniyle bu işlemin tamamlanabilmesi için uygulamanın yönetici (root/sudo) yetkileriyle çalıştırılması gerekir."
         case .xcodeDerivedData:
             return "Güvenle silinebilir. Projelerinizi Xcode'da ilk açtığınızda indeksleme ve ilk derleme işlemi normalden biraz daha uzun sürecektir."
         case .xcodeSimulators:
@@ -144,7 +144,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         case .systemCache: return "Tavsiye Edilen: Haftada veya ayda bir kez temizlenmesi disk sağlığı için iyidir."
         case .systemLogs: return "Tavsiye Edilen: Disk alanından bağımsız olarak düzenli silinmesinde hiçbir sakınca yoktur."
         case .trash: return "Gözden Geçirin: İçinde unutulmuş önemli bir dosya yoksa boşaltabilirsiniz."
-        case .timeMachineSnapshots: return "Tavsiye Edilen: Özellikle diskiniz dolduğunda sistem verilerini rahatlatmak için silinmelidir."
+        case .timeMachineSnapshots: return "Yönetici İzni Gerekebilir: Özellikle diskiniz dolduğunda sistem verilerini rahatlatmak için silinmelidir."
         case .xcodeDerivedData: return "Tavsiye Edilen: Özellikle Xcode yavaşladığında veya derleme hataları verdiğinde mutlaka silinmelidir."
         case .xcodeSimulators: return "Gözden Geçirin: Simülatörlerde sakladığınız kritik test verileri yoksa silinmesi büyük yer kazandırır."
         case .packageCaches: return "Gözden Geçirin: Disk alanınız darsa ve internet bağlantınız varsa silmekte sakınca yoktur."
@@ -276,21 +276,29 @@ class DiskScanner {
     
     // Shell execution helper
     func runShellCommand(_ executable: String, arguments: [String]) -> String? {
+        let (output, _) = runShellCommandWithStatus(executable, arguments: arguments)
+        return output
+    }
+    
+    // Shell execution helper that returns exit code
+    func runShellCommandWithStatus(_ executable: String, arguments: [String]) -> (output: String?, exitCode: Int32) {
         let process = Process()
         let pipe = Pipe()
+        let errorPipe = Pipe()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
         process.standardOutput = pipe
-        process.standardError = Pipe()
+        process.standardError = errorPipe
         
         do {
             try process.run()
             process.waitUntilExit()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8)
+            let output = String(data: data, encoding: .utf8)
+            return (output, process.terminationStatus)
         } catch {
             print("Failed to run command \(executable): \(error)")
-            return nil
+            return (nil, -1)
         }
     }
     
@@ -381,29 +389,37 @@ class DiskScanner {
         
         var items: [ScanItem] = []
         let lines = output.components(separatedBy: .newlines)
+        
+        // Match com.apple.TimeMachine.2026-06-09-150244.local style patterns robustly
+        let pattern = "com\\.apple\\.TimeMachine\\.[0-9a-zA-Z\\-]+\\.local"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return []
+        }
+        
         for line in lines {
-            // Lines containing com.apple.TimeMachine
-            if line.contains("com.apple.TimeMachine.") {
-                // e.g. com.apple.TimeMachine.2026-06-09-150244.local
-                let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                let components = cleanLine.components(separatedBy: ".")
-                var name = cleanLine
-                if components.count >= 4 {
-                    // Extract date e.g. 2026-06-09-150244
-                    let datePart = components[3]
-                    name = "Time Machine Yedek Kopyası (\(datePart))"
+            let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let range = NSRange(cleanLine.startIndex..<cleanLine.endIndex, in: cleanLine)
+            
+            if let match = regex.firstMatch(in: cleanLine, options: [], range: range) {
+                if let swiftRange = Range(match.range, in: cleanLine) {
+                    let snapshotId = String(cleanLine[swiftRange])
+                    
+                    var name = snapshotId
+                    let parts = snapshotId.components(separatedBy: ".")
+                    if parts.count >= 4 {
+                        let datePart = parts[3]
+                        name = "Time Machine Yedek Kopyası (\(datePart))"
+                    }
+                    
+                    items.append(ScanItem(
+                        path: snapshotId,
+                        name: name,
+                        size: 250 * 1024 * 1024, // 250 MB placeholder
+                        category: .timeMachineSnapshots,
+                        isDirectory: false,
+                        isSelected: false
+                    ))
                 }
-                
-                // Since sizes aren't reported directly by tmutil instantly without mounting,
-                // we assign a calculated estimate of 250MB per snapshot, and note in warnings it varies.
-                items.append(ScanItem(
-                    path: cleanLine,
-                    name: name,
-                    size: 250 * 1024 * 1024, // 250 MB placeholder
-                    category: .timeMachineSnapshots,
-                    isDirectory: false,
-                    isSelected: false // Time Machine is Caution, default false
-                ))
             }
         }
         return items
@@ -704,8 +720,8 @@ class DiskScanner {
             if components.count >= 4 {
                 let datePart = components[3] // "2026-06-09-150244"
                 print("DELETING TIME MACHINE SNAPSHOT: \(datePart)")
-                let _ = runShellCommand("/usr/bin/tmutil", arguments: ["deletelocalsnapshots", datePart])
-                return true
+                let (_, exitCode) = runShellCommandWithStatus("/usr/bin/tmutil", arguments: ["deletelocalsnapshots", datePart])
+                return exitCode == 0
             }
         }
         
