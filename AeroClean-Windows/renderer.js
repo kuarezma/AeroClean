@@ -200,6 +200,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('success-modal').style.display = 'none';
   });
 
+  // Update check event listeners
+  const btnCheckUpdates = document.getElementById('btn-check-updates');
+  if (btnCheckUpdates) {
+    btnCheckUpdates.addEventListener('click', () => checkForUpdates(false));
+  }
+  const btnCloseUpdateModal = document.getElementById('btn-close-update-modal');
+  if (btnCloseUpdateModal) {
+    btnCloseUpdateModal.addEventListener('click', () => {
+      document.getElementById('update-modal').style.display = 'none';
+    });
+  }
+  
+  // Auto-check updates on startup
+  checkForUpdates(true);
+
   // Setup search triggers
   document.getElementById('large-search').addEventListener('input', renderLargeFiles);
   document.getElementById('apps-search').addEventListener('input', renderAppsList);
@@ -1348,4 +1363,83 @@ function formatTimeSaved(minutes) {
   if (hours > 0) result += `${hours} Saat `;
   if (mins > 0 || result === "") result += `${mins} Dakika`;
   return result.trim();
+}
+
+let updateUrl = null;
+
+async function checkForUpdates(isAutoCheck) {
+  const statusEl = document.getElementById('update-status');
+  const btnCheckUpdates = document.getElementById('btn-check-updates');
+  
+  if (!isAutoCheck && statusEl) {
+    statusEl.textContent = "Güncellemeler denetleniyor...";
+    if (btnCheckUpdates) btnCheckUpdates.disabled = true;
+  }
+  
+  try {
+    const response = await fetch('https://api.github.com/repos/kuarezma/AeroClean/releases/latest');
+    if (!response.ok) throw new Error('Network response was not ok');
+    
+    const json = await response.json();
+    const tagName = json.tag_name;
+    const htmlUrl = json.html_url;
+    const notes = json.body;
+    
+    const cleanLatest = tagName.replace(/[vV]/g, '');
+    const currentVersion = "1.5.0"; // Current Electron app version
+    
+    const compareResult = cleanLatest.localeCompare(currentVersion, undefined, { numeric: true, sensitivity: 'base' });
+    
+    if (compareResult > 0) {
+      updateUrl = htmlUrl;
+      
+      if (statusEl) {
+        statusEl.textContent = `Yeni sürüm mevcut: v${cleanLatest}`;
+        statusEl.style.color = '#a855f7';
+      }
+      
+      const checkBtn = document.getElementById('btn-check-updates');
+      if (checkBtn) {
+        checkBtn.textContent = "Güncellemeyi İndir";
+        checkBtn.className = "primary-btn";
+        checkBtn.style.background = "linear-gradient(135deg, #6366f1, #a855f7)";
+        checkBtn.style.color = "white";
+        checkBtn.onclick = () => window.electronAPI.openExternalUrl(updateUrl);
+        checkBtn.disabled = false;
+      }
+      
+      if (isAutoCheck) {
+        const modal = document.getElementById('update-modal');
+        const modalText = document.getElementById('update-modal-text');
+        const modalNotesContainer = document.getElementById('update-notes-container');
+        const modalNotes = document.getElementById('update-modal-notes');
+        const downloadBtn = document.getElementById('btn-download-update');
+        
+        if (modal && modalText) {
+          modalText.textContent = `AeroClean v${cleanLatest} sürümü indirilebilir.`;
+          if (notes) {
+            modalNotes.textContent = notes;
+            modalNotesContainer.style.display = 'block';
+          }
+          downloadBtn.onclick = () => {
+            window.electronAPI.openExternalUrl(updateUrl);
+            modal.style.display = 'none';
+          };
+          modal.style.display = 'flex';
+        }
+      }
+    } else {
+      if (!isAutoCheck && statusEl) {
+        statusEl.textContent = `Uygulamanız güncel (v${currentVersion}).`;
+        statusEl.style.color = '#22c55e';
+      }
+      if (btnCheckUpdates) btnCheckUpdates.disabled = false;
+    }
+  } catch (error) {
+    if (!isAutoCheck && statusEl) {
+      statusEl.textContent = `Güncelleme kontrolü başarısız: ${error.message}`;
+      statusEl.style.color = '#ef4444';
+    }
+    if (btnCheckUpdates) btnCheckUpdates.disabled = false;
+  }
 }

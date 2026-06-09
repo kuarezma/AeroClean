@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -48,6 +48,9 @@ ipcMain.on('window-maximize', () => {
   }
 });
 ipcMain.on('window-close', () => mainWindow.close());
+ipcMain.on('open-external-url', (event, url) => {
+  shell.openExternal(url);
+});
 
 // Helper to run commands
 function runCommand(cmd) {

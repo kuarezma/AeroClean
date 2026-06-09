@@ -60,9 +60,18 @@ class AppState: ObservableObject {
     @Published var cleanedAmount: Int64 = 0
     @Published var showCleanSuccessAlert = false
     
+    // Update States
+    @Published var isCheckingForUpdates = false
+    @Published var updateCheckError: String? = nil
+    @Published var latestVersion: String? = nil
+    @Published var updateUrl: String? = nil
+    @Published var updateNotes: String? = nil
+    @Published var showUpdateAlert = false
+    
     init() {
         loadDiskSpace()
         initializeCategories()
+        checkForUpdates(isAutoCheck: true)
     }
     
     func loadDiskSpace() {
@@ -76,6 +85,64 @@ class AppState: ObservableObject {
         self.categories = CleanCategory.allCases.map { cat in
             CategoryDetail(category: cat, items: [], isSelected: cat.safetyLevel == .recommended)
         }
+    }
+    
+    func checkForUpdates(isAutoCheck: Bool = false) {
+        guard let url = URL(string: "https://api.github.com/repos/kuarezma/AeroClean/releases/latest") else { return }
+        
+        isCheckingForUpdates = true
+        updateCheckError = nil
+        
+        var request = URLRequest(url: url)
+        request.setValue("AeroClean-Updater", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 10.0
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isCheckingForUpdates = false
+                
+                if let error = error {
+                    self.updateCheckError = "Bağlantı hatası: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    self.updateCheckError = "Veri alınamadı."
+                    return
+                }
+                
+                do {
+                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                        if let tagName = json["tag_name"] as? String,
+                           let htmlUrl = json["html_url"] as? String {
+                            
+                            let cleanLatest = tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+                            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
+                            let cleanCurrent = currentVersion.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+                            
+                            if cleanLatest.compare(cleanCurrent, options: .numeric) == .orderedDescending {
+                                self.latestVersion = tagName
+                                self.updateUrl = htmlUrl
+                                self.updateNotes = json["body"] as? String
+                                if isAutoCheck {
+                                    self.showUpdateAlert = true
+                                }
+                            } else {
+                                if !isAutoCheck {
+                                    self.updateCheckError = "Uygulamanız güncel (v\(currentVersion))."
+                                }
+                            }
+                        } else {
+                            self.updateCheckError = "Sürüm bilgisi çözümlenemedi."
+                        }
+                    }
+                } catch {
+                    self.updateCheckError = "JSON çözümleme hatası: \(error.localizedDescription)"
+                }
+            }
+        }.resume()
     }
     
     func startScan() {

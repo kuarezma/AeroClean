@@ -87,6 +87,58 @@ struct SettingsView: View {
                 .background(Color(.windowBackgroundColor).opacity(0.2))
                 .cornerRadius(12)
                 
+                // Update checker card
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Uygulama Güncellemeleri")
+                        .font(.title3)
+                        .bold()
+                    
+                    Divider().opacity(0.15)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if appState.isCheckingForUpdates {
+                                Text("Güncellemeler denetleniyor...")
+                                    .font(.headline)
+                            } else if let error = appState.updateCheckError {
+                                Text(error)
+                                    .font(.headline)
+                                    .foregroundColor(error.contains("güncel") ? .green : .red)
+                            } else if let latest = appState.latestVersion {
+                                Text("Yeni sürüm mevcut: v\(latest)")
+                                    .font(.headline)
+                                    .foregroundColor(.purple)
+                            } else {
+                                Text("Son güncellemeleri denetleyin.")
+                                    .font(.headline)
+                            }
+                            
+                            Text("AeroClean web sitesinden veya GitHub üzerinden son sürümü yükleyebilirsiniz.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if let urlString = appState.updateUrl, let url = URL(string: urlString) {
+                            Button("Güncellemeyi İndir") {
+                                NSWorkspace.shared.open(url)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.purple)
+                        } else {
+                            Button("Şimdi Denetle") {
+                                appState.checkForUpdates(isAutoCheck: false)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(appState.isCheckingForUpdates)
+                        }
+                    }
+                }
+                .padding(20)
+                .background(Color(.windowBackgroundColor).opacity(0.2))
+                .cornerRadius(12)
+                
                 // About app
                 VStack(spacing: 8) {
                     let versionStr = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0"

@@ -416,6 +416,17 @@
             </div>
           </div>
 
+          <div class="settings-card" id="updates-card">
+            <h3>Uygulama Güncellemeleri</h3>
+            <div class="settings-row">
+              <div>
+                <h4 id="update-status">Son güncellemeleri denetleyin.</h4>
+                <p class="caption">AeroClean web sitesinden veya GitHub üzerinden son sürümü yükleyebilirsiniz.</p>
+              </div>
+              <button class="secondary-btn" id="btn-check-updates">Şimdi Denetle</button>
+            </div>
+          </div>
+
           <div class="settings-about">
             <h4>AeroClean v1.5.0 (Windows x64)</h4>
             <p class="blue-text">Uğur Yaşayan tarafından üretildi</p>
@@ -424,6 +435,22 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Update Alert Dialog -->
+  <div class="modal-overlay" id="update-modal" style="display:none; z-index: 2000;">
+    <div class="modal-card" style="max-width: 420px;">
+      <h2 style="color: #a855f7;">Yeni Güncelleme Mevcut!</h2>
+      <p id="update-modal-text">AeroClean v1.6.0 sürümü indirilebilir.</p>
+      <div id="update-notes-container" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin: 12px 0; max-height: 120px; overflow-y: auto; text-align: left; font-size: 11px; display: none;">
+        <strong>Yenilikler:</strong>
+        <p id="update-modal-notes" style="margin-top: 6px; color: #a1a1aa; line-height: 1.4; white-space: pre-wrap;"></p>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
+        <button class="secondary-btn" id="btn-close-update-modal">Daha Sonra</button>
+        <button class="primary-btn" id="btn-download-update" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white;">Şimdi Güncelle</button>
+      </div>
     </div>
   </div>
 

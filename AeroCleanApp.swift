@@ -8,7 +8,7 @@ struct AeroCleanApp: App {
         WindowGroup {
             MainContainerView()
                 .environmentObject(appState)
-                .frame(minWidth: 1050, minHeight: 650)
+                .frame(minWidth: 1180, minHeight: 680)
         }
         .windowStyle(.hiddenTitleBar)
     }
@@ -62,6 +62,90 @@ struct MainContainerView: View {
                 }
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
                 .padding(20)
+            }
+            
+            // Custom Glassmorphic Update Dialog Overlay
+            if appState.showUpdateAlert, let latestVer = appState.latestVersion {
+                ZStack {
+                    Color.black.opacity(0.4)
+                        .edgesIgnoringSafeArea(.all)
+                        .onTapGesture {
+                            appState.showUpdateAlert = false
+                        }
+                    
+                    VStack(spacing: 20) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundColor(.purple)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Yeni Güncelleme Mevcut!")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                Text("AeroClean \(latestVer) sürümü indirilebilir.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                        }
+                        
+                        if let notes = appState.updateNotes, !notes.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Yenilikler:")
+                                    .font(.caption)
+                                    .bold()
+                                    .foregroundColor(.secondary)
+                                ScrollView {
+                                    Text(notes)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .frame(maxHeight: 120)
+                            }
+                            .padding(12)
+                            .background(Color.white.opacity(0.03))
+                            .cornerRadius(8)
+                        }
+                        
+                        HStack(spacing: 12) {
+                            Button("Daha Sonra") {
+                                appState.showUpdateAlert = false
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(Color.white.opacity(0.06))
+                            .cornerRadius(8)
+                            
+                            Button("Şimdi Güncelle") {
+                                if let urlString = appState.updateUrl, let url = URL(string: urlString) {
+                                    NSWorkspace.shared.open(url)
+                                }
+                                appState.showUpdateAlert = false
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .foregroundColor(.white)
+                            .background(LinearGradient(gradient: Gradient(colors: [.indigo, .purple]), startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding(24)
+                    .frame(width: 420)
+                    .background(Color.white.opacity(0.05))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.purple.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(radius: 20)
+                }
+                .transition(.opacity)
+                .zIndex(100)
             }
         }
         .edgesIgnoringSafeArea(.all)

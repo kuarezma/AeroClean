@@ -18,5 +18,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Application Uninstaller
   scanApps: () => ipcRenderer.invoke('scan-apps'),
-  scanAppLeftovers: (app) => ipcRenderer.invoke('scan-app-leftovers', app)
+  scanAppLeftovers: (app) => ipcRenderer.invoke('scan-app-leftovers', app),
+  
+  // Open external links
+  openExternalUrl: (url) => ipcRenderer.send('open-external-url', url)
 });

@@ -34,7 +34,8 @@ struct DashboardView: View {
                         free: appState.freeSpace,
                         total: appState.totalSpace,
                         systemData: appState.systemDataSize,
-                        hasScanned: appState.hasScanned
+                        hasScanned: appState.hasScanned,
+                        isScanning: appState.isScanning
                     )
                     .frame(height: 180)
                     
@@ -248,13 +249,16 @@ struct DashboardView: View {
     }
 }
 
-// Custom Circular Gauge
 struct StorageGaugeView: View {
     let used: Int64
     let free: Int64
     let total: Int64
     let systemData: Int64
     let hasScanned: Bool
+    let isScanning: Bool
+    
+    @State private var rotationAngle: Double = 0.0
+    @State private var isSparklePulsing = false
     
     var body: some View {
         ZStack {
@@ -262,42 +266,74 @@ struct StorageGaugeView: View {
             Circle()
                 .stroke(Color.primary.opacity(0.05), lineWidth: 20)
             
-            // Used Space arc
-            Circle()
-                .trim(from: 0.0, to: CGFloat(Double(used) / max(Double(total), 1.0)))
-                .stroke(
-                    LinearGradient(gradient: Gradient(colors: [.blue, .indigo]), startPoint: .top, endPoint: .bottom),
-                    style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                )
-                .rotationEffect(Angle(degrees: -90))
-                .animation(.easeOut(duration: 1.0), value: used)
-            
-            // System Data Highlight arc (nested or layered)
-            if hasScanned && systemData > 0 {
+            if isScanning {
+                // Spinning scanning ring (radar sweep effect)
                 Circle()
-                    .trim(from: 0.0, to: CGFloat(Double(systemData) / max(Double(total), 1.0)))
+                    .trim(from: 0.0, to: 0.25)
                     .stroke(
-                        LinearGradient(gradient: Gradient(colors: [.purple, .pink]), startPoint: .top, endPoint: .bottom),
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                        LinearGradient(gradient: Gradient(colors: [.clear, .purple.opacity(0.8), .purple]), startPoint: .topLeading, endPoint: .bottomTrailing),
+                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                    )
+                    .rotationEffect(Angle(degrees: rotationAngle))
+                    .onAppear {
+                        withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                            rotationAngle = 360.0
+                        }
+                    }
+            } else {
+                // Used Space arc
+                Circle()
+                    .trim(from: 0.0, to: CGFloat(Double(used) / max(Double(total), 1.0)))
+                    .stroke(
+                        LinearGradient(gradient: Gradient(colors: [.blue, .indigo]), startPoint: .top, endPoint: .bottom),
+                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
                     )
                     .rotationEffect(Angle(degrees: -90))
-                    .padding(15)
-                    .animation(.easeOut(duration: 1.0), value: systemData)
+                    .animation(.easeOut(duration: 1.0), value: used)
+                
+                // System Data Highlight arc (nested or layered)
+                if hasScanned && systemData > 0 {
+                    Circle()
+                        .trim(from: 0.0, to: CGFloat(Double(systemData) / max(Double(total), 1.0)))
+                        .stroke(
+                            LinearGradient(gradient: Gradient(colors: [.purple, .pink]), startPoint: .top, endPoint: .bottom),
+                            style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                        )
+                        .rotationEffect(Angle(degrees: -90))
+                        .padding(15)
+                        .animation(.easeOut(duration: 1.0), value: systemData)
+                }
             }
             
             // Text center labels
             VStack(spacing: 4) {
-                Text(ByteCountFormatter.string(fromByteCount: free, countStyle: .file))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                Text("Boş Alan")
-                    .font(.system(size: 10))
-                    .bold()
-                    .foregroundColor(.secondary)
-                Text("Toplam: \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
-                    .padding(.top, 2)
+                if isScanning {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 32))
+                        .foregroundColor(.purple)
+                        .scaleEffect(isSparklePulsing ? 1.2 : 0.8)
+                        .opacity(isSparklePulsing ? 1.0 : 0.5)
+                        .onAppear {
+                            withAnimation(Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                                isSparklePulsing = true
+                            }
+                        }
+                    Text("Mac Analiz Ediliyor...")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(ByteCountFormatter.string(fromByteCount: free, countStyle: .file))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("Boş Alan")
+                        .font(.system(size: 10))
+                        .bold()
+                        .foregroundColor(.secondary)
+                    Text("Toplam: \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 2)
+                }
             }
         }
         .padding(5)
