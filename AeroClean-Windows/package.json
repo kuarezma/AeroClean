@@ -1,0 +1,43 @@
+{
+  "name": "aeroclean-windows",
+  "version": "1.2.0",
+  "description": "Native-like Windows Storage Optimizer & Cleaner",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
+  },
+  "author": "Uğur Yaşayan",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^30.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.ugurmac.aeroclean",
+    "productName": "AeroClean",
+    "copyright": "Copyright © 2026 Uğur Yaşayan",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AeroClean"
+    },
+    "msi": {
+      "createDesktopShortcut": true,
+      "shortcutName": "AeroClean",
+      "oneClick": false
+    }
+  }
+}

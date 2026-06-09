@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>AeroClean - Windows Optimizer</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  
+  <!-- Frameless Titlebar -->
+  <div id="titlebar">
+    <div class="titlebar-logo">
+      <div class="logo-dot">✦</div>
+      <span>AeroClean</span>
+    </div>
+    <div class="titlebar-drag-region"></div>
+    <div class="titlebar-controls">
+      <div class="control-button" id="btn-minimize">&#9472;</div>
+      <div class="control-button" id="btn-maximize">&#9633;</div>
+      <div class="control-button close-btn" id="btn-close">&#9587;</div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div id="app-container">
+    
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="app-logo">✦</div>
+        <div class="app-info">
+          <span class="app-name">AeroClean</span>
+          <span class="app-sub">Windows Optimizer</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-tab="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button class="nav-btn" data-tab="system-clean">
+          <span class="nav-icon">⚙️</span> Sistem Verileri
+        </button>
+        <button class="nav-btn" data-tab="large-files">
+          <span class="nav-icon">📂</span> Büyük Dosyalar
+        </button>
+        <button class="nav-btn" data-tab="startups">
+          <span class="nav-icon">⚡</span> Başlangıç Öğeleri
+        </button>
+        <button class="nav-btn" data-tab="uninstaller">
+          <span class="nav-icon">📦</span> Uygulama Kaldırıcı
+        </button>
+        <button class="nav-btn" data-tab="developer">
+          <span class="nav-icon">🛠️</span> Geliştirici
+        </button>
+        <button class="nav-btn" data-tab="settings">
+          <span class="nav-icon">🔧</span> Ayarlar & Yardım
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="disk-widget">
+          <div class="widget-header">
+            <span>💾 Disk Doluluğu</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="widget-bar"></div>
+          </div>
+          <div class="widget-info">
+            <span id="widget-free">... boş</span>
+            <span id="widget-percent" class="percent-label">...</span>
+          </div>
+        </div>
+        <div class="dev-signature">Uğur Yaşayan tarafından üretildi</div>
+      </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div id="content-panel">
+      
+      <!-- Tab 1: Dashboard -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="tab-header">
+          <h1>AeroClean Dashboard</h1>
+          <p class="subtitle">Windows'unuzu tarayın, performansı artırın ve gigabaytlarca yer açın.</p>
+        </div>
+        
+        <div class="dashboard-grid">
+          <!-- Circular Gauge Card -->
+          <div class="dash-card gauge-card">
+            <h3>Disk Durumu</h3>
+            <div class="gauge-wrapper">
+              <svg viewBox="0 0 100 100" class="disk-svg">
+                <circle cx="50" cy="50" r="40" class="svg-bg-track" />
+                <circle cx="50" cy="50" r="40" class="svg-fill-track" id="gauge-used-arc" />
+                <circle cx="50" cy="50" r="32" class="svg-system-track" id="gauge-sys-arc" style="display:none;" />
+              </svg>
+              <div class="gauge-labels">
+                <span class="gauge-val" id="dash-free-space">...</span>
+                <span class="gauge-lbl">Boş Alan</span>
+                <span class="gauge-sub" id="dash-total-space">...</span>
+              </div>
+            </div>
+            <div class="gauge-stats">
+              <div class="stat-item"><span class="dot blue"></span>Kullanılan: <strong id="stat-used">...</strong></div>
+              <div class="stat-item"><span class="dot green"></span>Boş Alan: <strong id="stat-free">...</strong></div>
+              <div class="stat-item" id="stat-system-data-row" style="display:none;"><span class="dot purple"></span>Sistem Verileri: <strong id="stat-system-data">...</strong></div>
+            </div>
+          </div>
+
+          <!-- Actions / System Info -->
+          <div class="dash-card actions-card">
+            <div class="sys-info-block">
+              <h3>Sistem Bilgileri</h3>
+              <div class="sys-row">💻 <strong>Cihaz:</strong> Windows x64 PC</div>
+              <div class="sys-row">🚀 <strong>Temizlik İzni:</strong> Yönetici Modu</div>
+            </div>
+            
+            <div class="scan-controls-block">
+              <!-- Scan status info -->
+              <div id="scan-progress-block" style="display:none;">
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill progress-purple" id="scan-progress-bar"></div>
+                </div>
+                <p id="scan-progress-label" class="caption">Hazırlanıyor...</p>
+              </div>
+
+              <button class="primary-btn" id="btn-start-scan">
+                🔎 Mac/PC'yi Tara
+              </button>
+              <p class="scan-tip green-text" id="scan-success-msg" style="display:none;">Tarama tamamlandı. Detayları inceleyip temizleyebilirsiniz.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-bottom-cards" id="dash-shortcuts" style="display:none;">
+          <div class="shortcut-card" data-tab="system-clean">
+            <span class="shortcut-icon">🟢</span>
+            <div class="shortcut-body">
+              <h4>Önerilen Temizlik</h4>
+              <p class="size-text" id="shortcut-recommended-size">...</p>
+              <p class="desc">Sistem önbellekleri ve geçici dosyalar.</p>
+            </div>
+          </div>
+          <div class="shortcut-card" data-tab="developer">
+            <span class="shortcut-icon">🛠️</span>
+            <div class="shortcut-body">
+              <h4>Geliştirici Dosyaları</h4>
+              <p class="size-text" id="shortcut-developer-size">...</p>
+              <p class="desc">Geliştirici önbellekleri.</p>
+            </div>
+          </div>
+          <div class="shortcut-card" data-tab="large-files">
+            <span class="shortcut-icon">📂</span>
+            <div class="shortcut-body">
+              <h4>Büyük Dosyalar</h4>
+              <p class="size-text" id="shortcut-large-size">...</p>
+              <p class="desc">100MB+ büyüklüğündeki dosyalar.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: System Data Clean -->
+      <div class="tab-content" id="tab-system-clean">
+        <div class="tab-header flex-header">
+          <div>
+            <h1>Sistem Verileri Temizliği</h1>
+            <p class="subtitle">Detaylı önbellek, log ve sistem artıklarını analiz edin.</p>
+          </div>
+          <button class="clean-btn" id="btn-clean-system" disabled>Seçilenleri Temizle (...)</button>
+        </div>
+
+        <div class="filter-tab-bar" id="sys-filter-bar">
+          <button class="filter-btn active" data-filter="recommended">🟢 Güvenle Silinebilir (Önerilen)</button>
+          <button class="filter-btn" data-filter="caution">🟡 Dikkat Edilmeli (Tavsiye Edilmez)</button>
+          <button class="filter-btn" data-filter="danger">🔴 Sistem / Hassas Veri (Silinmez)</button>
+        </div>
+
+        <div class="pane-split">
+          <!-- Column 1: Categories -->
+          <div class="left-list-pane" id="sys-categories-list"></div>
+          
+          <!-- Column 2: File List -->
+          <div class="middle-detail-pane">
+            <div class="pane-title" id="sys-detail-title">Kategori Seçin</div>
+            <div class="select-all-row" style="display:none;" id="sys-select-all-wrapper">
+              <label class="checkbox-container">
+                <input type="checkbox" id="chk-sys-select-all" checked>
+                <span class="checkbox-label">Tümünü Seç / Kaldır</span>
+              </label>
+            </div>
+            <div class="scroll-list" id="sys-files-list"></div>
+          </div>
+
+          <!-- Column 3: Advice Card -->
+          <div class="right-advice-pane" id="sys-advice-panel"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Large Files -->
+      <div class="tab-content" id="tab-large-files">
+        <div class="tab-header flex-header">
+          <div>
+            <h1>Büyük Dosya Analizi</h1>
+            <p class="subtitle">Home klasöründeki 100MB'tan büyük dosyaları bulun ve temizleyin.</p>
+          </div>
+          <button class="clean-btn btn-orange" id="btn-clean-large" disabled>Seçilenleri Sil (...)</button>
+        </div>
+
+        <div class="search-filter-row">
+          <input type="text" placeholder="Dosya adı ara..." class="search-input" id="large-search">
+          <div class="filter-pills" id="large-pills">
+            <button class="pill active" data-filter="All">Hepsi</button>
+            <button class="pill" data-filter="Videolar">Videolar</button>
+            <button class="pill" data-filter="Arşivler">Arşivler</button>
+            <button class="pill" data-filter="Belgeler">Belgeler</button>
+            <button class="pill" data-filter="Müzik">Müzik</button>
+            <button class="pill" data-filter="Diğer">Diğer</button>
+          </div>
+        </div>
+
+        <div class="pane-split">
+          <div class="middle-detail-pane flex-grow">
+            <div class="select-all-row" id="large-select-all-wrapper">
+              <label class="checkbox-container">
+                <input type="checkbox" id="chk-large-select-all">
+                <span class="checkbox-label">Tümünü Seç / Kaldır</span>
+              </label>
+            </div>
+            <div class="scroll-list" id="large-files-list"></div>
+          </div>
+          <div class="right-advice-pane" id="large-advice-panel"></div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Startup Items -->
+      <div class="tab-content" id="tab-startups">
+        <div class="tab-header flex-header">
+          <div>
+            <h1>Başlangıç Öğeleri Analizi</h1>
+            <p class="subtitle">Bilgisayarınız açıldığında arka planda otomatik başlayan servisleri ve uygulamaları yönetin.</p>
+          </div>
+          <button class="secondary-btn" id="btn-refresh-startups">🔄 Yenile</button>
+        </div>
+
+        <div class="pane-split">
+          <div class="middle-detail-pane flex-grow">
+            <div class="scroll-list" id="startups-list"></div>
+          </div>
+          <div class="right-advice-pane" id="startups-advice-panel"></div>
+        </div>
+      </div>
+
+      <!-- Tab 5: App Uninstaller -->
+      <div class="tab-content" id="tab-uninstaller">
+        <div class="tab-header flex-header">
+          <div>
+            <h1>Uygulama Kaldırıcı (Uninstaller)</h1>
+            <p class="subtitle">Uygulamaları arkalarında kalan gizli dosya ve kayıtları ile birlikte tamamen silin.</p>
+          </div>
+          <button class="clean-btn" id="btn-uninstall-app" disabled>Uygulamayı ve Kalıntıları Kaldır (...)</button>
+        </div>
+
+        <div class="pane-split">
+          <!-- Column 1: Installed Apps -->
+          <div class="left-list-pane" style="width:280px;">
+            <input type="text" placeholder="Uygulama ara..." class="search-input" id="apps-search" style="margin-bottom:10px; width:90%">
+            <div class="scroll-list" id="uninstaller-apps-list"></div>
+          </div>
+          
+          <!-- Column 2: Leftovers -->
+          <div class="middle-detail-pane">
+            <div class="pane-title" id="uninstaller-detail-title">Uygulama Seçin</div>
+            <div class="select-all-row" style="display:none;" id="uninstaller-select-all-wrapper">
+              <label class="checkbox-container">
+                <input type="checkbox" id="chk-uninstaller-select-all" checked>
+                <span class="checkbox-label">Tümünü Seç / Kaldır</span>
+              </label>
+            </div>
+            <div class="scroll-list" id="uninstaller-leftovers-list"></div>
+          </div>
+
+          <!-- Column 3: Advice Panel -->
+          <div class="right-advice-pane" id="uninstaller-advice-panel"></div>
+        </div>
+      </div>
+
+      <!-- Tab 6: Developer Cleanup -->
+      <div class="tab-content" id="tab-developer">
+        <div class="tab-header flex-header">
+          <div>
+            <h1>Geliştirici Önbellek Temizliği</h1>
+            <p class="subtitle">Yazılım araçlarının (npm, Cargo, Pip, Brew) biriktirdiği gigabaytlarca önbelleği temizleyin.</p>
+          </div>
+          <button class="clean-btn btn-purple" id="btn-clean-developer" disabled>Geliştirici Önbelleklerini Sil (...)</button>
+        </div>
+
+        <div class="pane-split">
+          <div class="left-list-pane" id="dev-categories-list"></div>
+          <div class="middle-detail-pane">
+            <div class="pane-title" id="dev-detail-title">Kategori Seçin</div>
+            <div class="scroll-list" id="dev-files-list"></div>
+          </div>
+          <div class="right-advice-pane" id="dev-advice-panel"></div>
+        </div>
+      </div>
+
+      <!-- Tab 7: Settings -->
+      <div class="tab-content" id="tab-settings">
+        <div class="tab-header">
+          <h1>Ayarlar & Yardım</h1>
+          <p class="subtitle">AeroClean yapılandırması ve Windows izin rehberi.</p>
+        </div>
+        
+        <div class="settings-scroll-area">
+          <div class="settings-card help-card">
+            <h3>🛡️ Yönetici Yetkileri Gerekli mi?</h3>
+            <p>Windows Temp, Prefetch ve sistem logları gibi klasörleri tam tarayabilmek için AeroClean uygulamasını <strong>Yönetici Olarak Çalıştır</strong> seçeneğiyle açmanız önerilir. Aksi takdirde, kısıtlı kullanıcı yetkileriyle sadece kendi hesabınızın önbelleklerini temizleyebilirsiniz.</p>
+            <p class="headline">Yönetici Yetkisi Nasıl Verilir?</p>
+            <ol>
+              <li>AeroClean masaüstü kısayoluna veya yüklü uygulamasına sağ tıklayın.</li>
+              <li><strong>Yönetici Olarak Çalıştır</strong> (Run as Administrator) seçeneğini tıklayın.</li>
+            </ol>
+          </div>
+
+          <div class="settings-card">
+            <h3>Genel İşlemler</h3>
+            <div class="settings-row">
+              <div>
+                <h4>Tarama Verilerini Temizle</h4>
+                <p class="caption">Hafızadaki tarama sonuçlarını ve disk verilerini sıfırlar.</p>
+              </div>
+              <button class="secondary-btn" id="btn-reset-cache">Sıfırla</button>
+            </div>
+          </div>
+
+          <div class="settings-about">
+            <h4>AeroClean v1.2.0 (Windows x64)</h4>
+            <p class="blue-text">Uğur Yaşayan tarafından üretildi</p>
+            <p class="caption">Tüm hakları saklıdır. Windows için yerel Electron uygulaması.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Deletion Success Dialog -->
+  <div class="modal-overlay" id="success-modal" style="display:none;">
+    <div class="modal-card">
+      <h2>Temizlik Tamamlandı</h2>
+      <p>Seçtiğiniz gereksiz veriler güvenle silindi.</p>
+      <div class="freed-amount">Serbest Bırakılan: <strong id="success-freed-size">0 KB</strong></div>
+      <button class="primary-btn" id="btn-close-modal">Tamam</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

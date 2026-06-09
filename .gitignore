@@ -18,3 +18,9 @@ AeroClean.app/
 # Scratch directories
 scratch/
 AppIcon.iconset/
+
+# Node dependencies & builds
+node_modules/
+dist/
+AeroClean-Windows/node_modules/
+AeroClean-Windows/dist/
