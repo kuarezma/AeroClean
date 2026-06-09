@@ -36,6 +36,11 @@ struct MainContainerView: View {
                 VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
                     .edgesIgnoringSafeArea(.all)
                 
+                ThemeBackgroundView(tab: appState.selectedTab)
+                    .opacity(0.82)
+                    .animation(.easeInOut(duration: 0.4), value: appState.selectedTab)
+                    .edgesIgnoringSafeArea(.all)
+                
                 Group {
                     switch appState.selectedTab {
                     case .dashboard:
@@ -149,8 +154,12 @@ struct SidebarButton: View {
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.blue.opacity(0.8) : (isHovered ? Color.primary.opacity(0.05) : Color.clear))
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isSelected ? Color.white.opacity(0.12) : (isHovered ? Color.white.opacity(0.05) : Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.white.opacity(0.08) : Color.clear, lineWidth: 0.8)
             )
         }
         .buttonStyle(PlainButtonStyle())

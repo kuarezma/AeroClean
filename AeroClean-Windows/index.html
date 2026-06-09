@@ -81,85 +81,141 @@
       
       <!-- Tab 1: Dashboard -->
       <div class="tab-content active" id="tab-dashboard">
-        <div class="tab-header">
-          <h1>AeroClean Dashboard</h1>
-          <p class="subtitle">Windows'unuzu tarayın, performansı artırın ve gigabaytlarca yer açın.</p>
-        </div>
         
-        <div class="dashboard-grid">
-          <!-- Circular Gauge Card -->
-          <div class="dash-card gauge-card">
-            <h3>Disk Durumu</h3>
-            <div class="gauge-wrapper">
-              <svg viewBox="0 0 100 100" class="disk-svg">
-                <circle cx="50" cy="50" r="40" class="svg-bg-track" />
-                <circle cx="50" cy="50" r="40" class="svg-fill-track" id="gauge-used-arc" />
-                <circle cx="50" cy="50" r="32" class="svg-system-track" id="gauge-sys-arc" style="display:none;" />
-              </svg>
-              <div class="gauge-labels">
-                <span class="gauge-val" id="dash-free-space">...</span>
-                <span class="gauge-lbl">Boş Alan</span>
-                <span class="gauge-sub" id="dash-total-space">...</span>
+        <!-- State 1: Ready to Scan -->
+        <div id="dash-state-ready" class="dash-state-view">
+          <div class="landing-illustration-container">
+            <div class="glow-radial-bg"></div>
+            <div class="mac-display-icon">💻</div>
+          </div>
+          
+          <div class="landing-text-block">
+            <h1>Akıllı Bakım (Smart Care)</h1>
+            <p class="subtitle">Tek dokunuşla bilgisayarınızda yer açın ve sistemi optimize edin.</p>
+          </div>
+          
+          <div class="landing-checklist">
+            <div class="checklist-item">
+              <span class="chk-icon green-icon">✨</span>
+              <div class="chk-details">
+                <strong>Hızlı Temizlik</strong>
+                <span>Önbellek, log ve sistem artıklarını tespit eder.</span>
               </div>
             </div>
-            <div class="gauge-stats">
-              <div class="stat-item"><span class="dot blue"></span>Kullanılan: <strong id="stat-used">...</strong></div>
-              <div class="stat-item"><span class="dot green"></span>Boş Alan: <strong id="stat-free">...</strong></div>
-              <div class="stat-item" id="stat-system-data-row" style="display:none;"><span class="dot purple"></span>Sistem Verileri: <strong id="stat-system-data">...</strong></div>
+            <div class="checklist-item">
+              <span class="chk-icon orange-icon">⚡</span>
+              <div class="chk-details">
+                <strong>Performans Arttırıcı</strong>
+                <span>Başlangıç öğelerini denetler ve optimize eder.</span>
+              </div>
+            </div>
+            <div class="checklist-item">
+              <span class="chk-icon blue-icon">📂</span>
+              <div class="chk-details">
+                <strong>Büyük Dosyalar</strong>
+                <span>Diskte çok yer kaplayan dosyaları listeler.</span>
+              </div>
             </div>
           </div>
+          
+          <button class="circular-action-btn btn-indigo" id="btn-dashboard-scan">Tara</button>
+        </div>
 
-          <!-- Actions / System Info -->
-          <div class="dash-card actions-card">
-            <div class="sys-info-block">
-              <h3>Sistem Bilgileri</h3>
-              <div class="sys-row">💻 <strong>Cihaz:</strong> Windows x64 PC</div>
-              <div class="sys-row">🚀 <strong>Temizlik İzni:</strong> Yönetici Modu</div>
+        <!-- State 2: Scanning -->
+        <div id="dash-state-scanning" class="dash-state-view" style="display:none;">
+          <div class="scanning-orb-container">
+            <div class="scanning-ring-pulse"></div>
+            <div class="scanning-icon">✨</div>
+          </div>
+          
+          <div class="landing-text-block">
+            <h1>Gereksiz Dosyalar Aranıyor...</h1>
+            <p class="subtitle" id="scan-progress-label">Hazırlanıyor...</p>
+          </div>
+          
+          <div class="scan-progress-wrapper">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill progress-purple" id="scan-progress-bar"></div>
             </div>
-            
-            <div class="scan-controls-block">
-              <!-- Scan status info -->
-              <div id="scan-progress-block" style="display:none;">
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill progress-purple" id="scan-progress-bar"></div>
+            <div class="scan-percent" id="scan-percent-label">%0</div>
+          </div>
+          
+          <button class="circular-action-btn btn-purple" id="btn-dashboard-stop">Durdur</button>
+        </div>
+
+        <!-- State 3: Scanned (Dashboard Grid) -->
+        <div id="dash-state-scanned" class="dash-state-view" style="display:none;">
+          <div class="tab-header">
+            <h1>AeroClean Dashboard</h1>
+            <p class="subtitle">Windows'unuzu tarayın, performansı artırın ve gigabaytlarca yer açın.</p>
+          </div>
+          
+          <div class="dashboard-grid">
+            <!-- Circular Gauge Card -->
+            <div class="dash-card gauge-card">
+              <h3>Disk Durumu</h3>
+              <div class="gauge-wrapper">
+                <svg viewBox="0 0 100 100" class="disk-svg">
+                  <circle cx="50" cy="50" r="40" class="svg-bg-track" />
+                  <circle cx="50" cy="50" r="40" class="svg-fill-track" id="gauge-used-arc" />
+                  <circle cx="50" cy="50" r="32" class="svg-system-track" id="gauge-sys-arc" style="display:none;" />
+                </svg>
+                <div class="gauge-labels">
+                  <span class="gauge-val" id="dash-free-space">...</span>
+                  <span class="gauge-lbl">Boş Alan</span>
+                  <span class="gauge-sub" id="dash-total-space">...</span>
                 </div>
-                <p id="scan-progress-label" class="caption">Hazırlanıyor...</p>
               </div>
+              <div class="gauge-stats">
+                <div class="stat-item"><span class="dot blue"></span>Kullanılan: <strong id="stat-used">...</strong></div>
+                <div class="stat-item"><span class="dot green"></span>Boş Alan: <strong id="stat-free">...</strong></div>
+                <div class="stat-item" id="stat-system-data-row" style="display:none;"><span class="dot purple"></span>Sistem Verileri: <strong id="stat-system-data">...</strong></div>
+              </div>
+            </div>
 
-              <button class="primary-btn" id="btn-start-scan">
-                🔎 Mac/PC'yi Tara
-              </button>
-              <p class="scan-tip green-text" id="scan-success-msg" style="display:none;">Tarama tamamlandı. Detayları inceleyip temizleyebilirsiniz.</p>
+            <!-- Actions / System Info -->
+            <div class="dash-card actions-card">
+              <div class="sys-info-block">
+                <h3>Sistem Bilgileri</h3>
+                <div class="sys-row">💻 <strong>Cihaz:</strong> Windows x64 PC</div>
+                <div class="sys-row">🚀 <strong>Temizlik İzni:</strong> Yönetici Modu</div>
+              </div>
+              
+              <div class="scan-controls-block">
+                <button class="circular-action-btn btn-indigo" id="btn-dashboard-rescan">Yeniden</button>
+                <p class="scan-tip green-text" id="scan-success-msg" style="margin-top:10px; text-align:center;">Tarama tamamlandı. Detayları inceleyip temizleyebilirsiniz.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-bottom-cards" id="dash-shortcuts" style="display:none;">
+            <div class="shortcut-card" data-tab="system-clean">
+              <span class="shortcut-icon">🟢</span>
+              <div class="shortcut-body">
+                <h4>Önerilen Temizlik</h4>
+                <p class="size-text" id="shortcut-recommended-size">...</p>
+                <p class="desc">Sistem önbellekleri ve geçici dosyalar.</p>
+              </div>
+            </div>
+            <div class="shortcut-card" data-tab="developer">
+              <span class="shortcut-icon">🛠️</span>
+              <div class="shortcut-body">
+                <h4>Geliştirici Dosyaları</h4>
+                <p class="size-text" id="shortcut-developer-size">...</p>
+                <p class="desc">Geliştirici önbellekleri.</p>
+              </div>
+            </div>
+            <div class="shortcut-card" data-tab="large-files">
+              <span class="shortcut-icon">📂</span>
+              <div class="shortcut-body">
+                <h4>Büyük Dosyalar</h4>
+                <p class="size-text" id="shortcut-large-size">...</p>
+                <p class="desc">100MB+ büyüklüğündeki dosyalar.</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="dashboard-bottom-cards" id="dash-shortcuts" style="display:none;">
-          <div class="shortcut-card" data-tab="system-clean">
-            <span class="shortcut-icon">🟢</span>
-            <div class="shortcut-body">
-              <h4>Önerilen Temizlik</h4>
-              <p class="size-text" id="shortcut-recommended-size">...</p>
-              <p class="desc">Sistem önbellekleri ve geçici dosyalar.</p>
-            </div>
-          </div>
-          <div class="shortcut-card" data-tab="developer">
-            <span class="shortcut-icon">🛠️</span>
-            <div class="shortcut-body">
-              <h4>Geliştirici Dosyaları</h4>
-              <p class="size-text" id="shortcut-developer-size">...</p>
-              <p class="desc">Geliştirici önbellekleri.</p>
-            </div>
-          </div>
-          <div class="shortcut-card" data-tab="large-files">
-            <span class="shortcut-icon">📂</span>
-            <div class="shortcut-body">
-              <h4>Büyük Dosyalar</h4>
-              <p class="size-text" id="shortcut-large-size">...</p>
-              <p class="desc">100MB+ büyüklüğündeki dosyalar.</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Tab 2: System Data Clean -->
@@ -337,7 +393,7 @@
           </div>
 
           <div class="settings-about">
-            <h4>AeroClean v1.2.0 (Windows x64)</h4>
+            <h4>AeroClean v1.3.0 (Windows x64)</h4>
             <p class="blue-text">Uğur Yaşayan tarafından üretildi</p>
             <p class="caption">Tüm hakları saklıdır. Windows için yerel Electron uygulaması.</p>
           </div>

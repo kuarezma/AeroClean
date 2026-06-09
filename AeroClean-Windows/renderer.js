@@ -108,7 +108,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   await updateDiskSpace();
   
   // Connect actions
-  document.getElementById('btn-start-scan').addEventListener('click', startScan);
+  document.getElementById('btn-dashboard-scan').addEventListener('click', startScan);
+  document.getElementById('btn-dashboard-stop').addEventListener('click', () => {
+    // Reset back to ready state
+    document.getElementById('dash-state-scanning').style.display = 'none';
+    document.getElementById('dash-state-ready').style.display = 'flex';
+  });
+  document.getElementById('btn-dashboard-rescan').addEventListener('click', startScan);
   document.getElementById('btn-clean-system').addEventListener('click', () => cleanSelected('system-clean'));
   document.getElementById('btn-clean-large').addEventListener('click', () => cleanSelected('large-files'));
   document.getElementById('btn-clean-developer').addEventListener('click', () => cleanSelected('developer'));
@@ -166,6 +172,11 @@ function setupTabSwitcher() {
       
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.getElementById(`tab-${target}`).classList.add('active');
+      
+      // Update body background class
+      document.body.className = '';
+      document.body.classList.add(`theme-${target}`);
+      
       activeTab = target;
       
       // Load specific data if scanned
@@ -216,16 +227,13 @@ async function updateDiskSpace() {
 
 // Async scan sequences
 async function startScan() {
-  const btn = document.getElementById('btn-start-scan');
-  btn.disabled = true;
-  btn.innerText = "Taranıyor...";
+  document.getElementById('dash-state-ready').style.display = 'none';
+  document.getElementById('dash-state-scanned').style.display = 'none';
+  document.getElementById('dash-state-scanning').style.display = 'flex';
   
-  const progressBlock = document.getElementById('scan-progress-block');
   const progressBar = document.getElementById('scan-progress-bar');
   const progressLabel = document.getElementById('scan-progress-label');
-  
-  progressBlock.style.display = 'block';
-  document.getElementById('scan-success-msg').style.display = 'none';
+  const percentLabel = document.getElementById('scan-percent-label');
   
   categories = [];
   largeFiles = [];
@@ -255,7 +263,9 @@ async function startScan() {
     step++;
     const config = categoriesConfig[key];
     progressLabel.innerText = `${config.displayName} taranıyor...`;
-    progressBar.style.width = `${(step / totalSteps) * 100}%`;
+    let percent = Math.round((step / totalSteps) * 100);
+    progressBar.style.width = `${percent}%`;
+    percentLabel.innerText = `%${percent}`;
     
     const items = await window.electronAPI.scanPath(key, config.baseFolder);
     categories.push({
@@ -270,7 +280,9 @@ async function startScan() {
     step++;
     const config = devCategoriesConfig[key];
     progressLabel.innerText = `${config.displayName} taranıyor...`;
-    progressBar.style.width = `${(step / totalSteps) * 100}%`;
+    let percent = Math.round((step / totalSteps) * 100);
+    progressBar.style.width = `${percent}%`;
+    percentLabel.innerText = `%${percent}`;
     
     const items = await window.electronAPI.scanPath(key, config.baseFolder);
     categories.push({
@@ -283,26 +295,30 @@ async function startScan() {
   // 4. Scan Large Files
   step++;
   progressLabel.innerText = "Büyük dosyalar aranıyor...";
-  progressBar.style.width = `${(step / totalSteps) * 100}%`;
+  let percent = Math.round((step / totalSteps) * 100);
+  progressBar.style.width = `${percent}%`;
+  percentLabel.innerText = `%${percent}`;
   largeFiles = await window.electronAPI.scanLargeFiles();
 
   // 5. Scan Startups
   step++;
   progressLabel.innerText = "Başlangıç servisleri analiz ediliyor...";
-  progressBar.style.width = `${(step / totalSteps) * 100}%`;
+  let percentVal = Math.round((step / totalSteps) * 100);
+  progressBar.style.width = `${percentVal}%`;
+  percentLabel.innerText = `%${percentVal}`;
   startupItems = await window.electronAPI.scanStartups();
 
   // 6. Scan Installed Apps
   step++;
   progressLabel.innerText = "Yüklü uygulamalar taranıyor...";
-  progressBar.style.width = `${(step / totalSteps) * 100}%`;
+  let finalPercent = Math.round((step / totalSteps) * 100);
+  progressBar.style.width = `${finalPercent}%`;
+  percentLabel.innerText = `%${finalPercent}`;
   installedApps = await window.electronAPI.scanApps();
 
   // Completed!
-  btn.disabled = false;
-  btn.innerText = "Yeniden Tara";
-  progressBlock.style.display = 'none';
-  document.getElementById('scan-success-msg').style.display = 'block';
+  document.getElementById('dash-state-scanning').style.display = 'none';
+  document.getElementById('dash-state-scanned').style.display = 'block';
 
   // Calculate System Data size
   const cleanableSystemData = categories

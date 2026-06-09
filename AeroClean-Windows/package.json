@@ -1,6 +1,6 @@
 {
   "name": "aeroclean-windows",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Native-like Windows Storage Optimizer & Cleaner",
   "main": "main.js",
   "scripts": {

@@ -56,6 +56,7 @@ swiftc -O -parse-as-library \
     -o "${MACOS_DIR}/${APP_NAME}" \
     CleanModel.swift \
     AppState.swift \
+    ThemeBackgroundView.swift \
     DashboardView.swift \
     SystemCleanView.swift \
     LargeFilesView.swift \
