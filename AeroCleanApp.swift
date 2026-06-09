@@ -19,28 +19,29 @@ struct MainContainerView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Sidebar Panel
-            SidebarView()
-                .frame(width: 210)
-                .background(VisualEffectView(material: .sidebar, blendingMode: .behindWindow))
-            
-            // Divider line
-            Rectangle()
-                .fill(Color.black.opacity(0.15))
-                .frame(width: 1)
+        ZStack {
+            // Unified background under both sidebar and content
+            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
                 .edgesIgnoringSafeArea(.all)
             
-            // Content Area based on active navigation selection
-            ZStack {
-                VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
+            ThemeBackgroundView(tab: appState.selectedTab)
+                .opacity(0.85)
+                .animation(.easeInOut(duration: 0.4), value: appState.selectedTab)
+                .edgesIgnoringSafeArea(.all)
+            
+            HStack(spacing: 0) {
+                // Sidebar Panel with translucent blend overlay
+                SidebarView()
+                    .frame(width: 210)
+                    .background(Color.black.opacity(0.12))
+                
+                // Faint divider line
+                Rectangle()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 1)
                     .edgesIgnoringSafeArea(.all)
                 
-                ThemeBackgroundView(tab: appState.selectedTab)
-                    .opacity(0.82)
-                    .animation(.easeInOut(duration: 0.4), value: appState.selectedTab)
-                    .edgesIgnoringSafeArea(.all)
-                
+                // Content Area based on active navigation selection
                 Group {
                     switch appState.selectedTab {
                     case .dashboard:
