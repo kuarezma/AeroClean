@@ -14,9 +14,9 @@ class AppState: ObservableObject {
         
         var iconName: String {
             switch self {
-            case .dashboard: return "gauge.medium"
-            case .systemClean: return "cpu"
-            case .largeFiles: return "doc.on.doc.fill"
+            case .dashboard: return "chart.bar.xaxis"
+            case .systemClean: return "sparkles"
+            case .largeFiles: return "folder.fill"
             case .startups: return "bolt.horizontal.fill"
             case .uninstaller: return "app.badge.minus"
             case .developer: return "hammer.fill"

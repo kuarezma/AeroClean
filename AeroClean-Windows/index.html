@@ -81,141 +81,165 @@
       
       <!-- Tab 1: Dashboard -->
       <div class="tab-content active" id="tab-dashboard">
-        
-        <!-- State 1: Ready to Scan -->
-        <div id="dash-state-ready" class="dash-state-view">
-          <div class="landing-illustration-container">
-            <div class="glow-radial-bg"></div>
-            <div class="mac-display-icon">💻</div>
+        <div class="activity-header">
+          <div class="header-left">
+            <h1>Aktivite Özetim (My Activity)</h1>
+            <p class="subtitle">Bilgisayarınızın güncel durum ve temizlik aktiviteleri.</p>
           </div>
-          
-          <div class="landing-text-block">
-            <h1>Akıllı Bakım (Smart Care)</h1>
-            <p class="subtitle">Tek dokunuşla bilgisayarınızda yer açın ve sistemi optimize edin.</p>
+          <div class="header-right">
+            <span class="date-badge">9 Haziran 2026'dan itibaren</span>
           </div>
-          
-          <div class="landing-checklist">
-            <div class="checklist-item">
-              <span class="chk-icon green-icon">✨</span>
-              <div class="chk-details">
-                <strong>Hızlı Temizlik</strong>
-                <span>Önbellek, log ve sistem artıklarını tespit eder.</span>
-              </div>
-            </div>
-            <div class="checklist-item">
-              <span class="chk-icon orange-icon">⚡</span>
-              <div class="chk-details">
-                <strong>Performans Arttırıcı</strong>
-                <span>Başlangıç öğelerini denetler ve optimize eder.</span>
-              </div>
-            </div>
-            <div class="checklist-item">
-              <span class="chk-icon blue-icon">📂</span>
-              <div class="chk-details">
-                <strong>Büyük Dosyalar</strong>
-                <span>Diskte çok yer kaplayan dosyaları listeler.</span>
-              </div>
-            </div>
-          </div>
-          
-          <button class="circular-action-btn btn-indigo" id="btn-dashboard-scan">Tara</button>
         </div>
 
-        <!-- State 2: Scanning -->
-        <div id="dash-state-scanning" class="dash-state-view" style="display:none;">
-          <div class="scanning-orb-container">
-            <div class="scanning-ring-pulse"></div>
-            <div class="scanning-icon">✨</div>
-          </div>
-          
-          <div class="landing-text-block">
-            <h1>Gereksiz Dosyalar Aranıyor...</h1>
-            <p class="subtitle" id="scan-progress-label">Hazırlanıyor...</p>
-          </div>
-          
-          <div class="scan-progress-wrapper">
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill progress-purple" id="scan-progress-bar"></div>
-            </div>
-            <div class="scan-percent" id="scan-percent-label">%0</div>
-          </div>
-          
-          <button class="circular-action-btn btn-purple" id="btn-dashboard-stop">Durdur</button>
-        </div>
-
-        <!-- State 3: Scanned (Dashboard Grid) -->
-        <div id="dash-state-scanned" class="dash-state-view" style="display:none;">
-          <div class="tab-header">
-            <h1>AeroClean Dashboard</h1>
-            <p class="subtitle">Windows'unuzu tarayın, performansı artırın ve gigabaytlarca yer açın.</p>
-          </div>
-          
-          <div class="dashboard-grid">
-            <!-- Circular Gauge Card -->
-            <div class="dash-card gauge-card">
-              <h3>Disk Durumu</h3>
-              <div class="gauge-wrapper">
-                <svg viewBox="0 0 100 100" class="disk-svg">
-                  <circle cx="50" cy="50" r="40" class="svg-bg-track" />
-                  <circle cx="50" cy="50" r="40" class="svg-fill-track" id="gauge-used-arc" />
-                  <circle cx="50" cy="50" r="32" class="svg-system-track" id="gauge-sys-arc" style="display:none;" />
-                </svg>
-                <div class="gauge-labels">
-                  <span class="gauge-val" id="dash-free-space">...</span>
-                  <span class="gauge-lbl">Boş Alan</span>
-                  <span class="gauge-sub" id="dash-total-space">...</span>
-                </div>
+        <div class="my-activity-grid">
+          <!-- Column 1 -->
+          <div class="grid-column">
+            <!-- Card 1: PC Health -->
+            <div class="activity-card card-health">
+              <div class="card-header-mini">
+                <span>PC Durumu</span>
+                <span class="info-icon">ℹ️</span>
               </div>
-              <div class="gauge-stats">
-                <div class="stat-item"><span class="dot blue"></span>Kullanılan: <strong id="stat-used">...</strong></div>
-                <div class="stat-item"><span class="dot green"></span>Boş Alan: <strong id="stat-free">...</strong></div>
-                <div class="stat-item" id="stat-system-data-row" style="display:none;"><span class="dot purple"></span>Sistem Verileri: <strong id="stat-system-data">...</strong></div>
-              </div>
-            </div>
-
-            <!-- Actions / System Info -->
-            <div class="dash-card actions-card">
-              <div class="sys-info-block">
-                <h3>Sistem Bilgileri</h3>
-                <div class="sys-row">💻 <strong>Cihaz:</strong> Windows x64 PC</div>
-                <div class="sys-row">🚀 <strong>Temizlik İzni:</strong> Yönetici Modu</div>
+              <h2 class="card-large-title">Harika (Excellent)</h2>
+              <p class="card-subtitle-mini">Windows x64 PC</p>
+              
+              <div class="laptop-illustration">
+                <div class="laptop-glow"></div>
+                <span class="laptop-symbol">💻</span>
               </div>
               
-              <div class="scan-controls-block">
-                <button class="circular-action-btn btn-indigo" id="btn-dashboard-rescan">Yeniden</button>
-                <p class="scan-tip green-text" id="scan-success-msg" style="margin-top:10px; text-align:center;">Tarama tamamlandı. Detayları inceleyip temizleyebilirsiniz.</p>
+              <div class="storage-mini-widget">
+                <div class="storage-labels-mini">
+                  <span>C: Sürücüsü</span>
+                  <span id="health-used-ratio">... kullanılıyor</span>
+                </div>
+                <div class="progress-bar-bg-mini">
+                  <div class="progress-bar-fill-mini" id="health-bar-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Recommendations -->
+            <div class="activity-card card-recommendations">
+              <div class="card-header-mini">
+                <span>Önerilen Eylemler</span>
+                <span class="link-all">Hepsini Gör</span>
+              </div>
+              <div class="rec-item">
+                <span class="rec-icon">📦</span>
+                <div class="rec-details">
+                  <h4>Kullanılmayanları Kaldır</h4>
+                  <p>Bilgisayarınızda uzun süredir açmadığınız uygulamaları tespit edip kaldırın.</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="dashboard-bottom-cards" id="dash-shortcuts" style="display:none;">
-            <div class="shortcut-card" data-tab="system-clean">
-              <span class="shortcut-icon">🟢</span>
-              <div class="shortcut-body">
-                <h4>Önerilen Temizlik</h4>
-                <p class="size-text" id="shortcut-recommended-size">...</p>
-                <p class="desc">Sistem önbellekleri ve geçici dosyalar.</p>
+          <!-- Column 2 -->
+          <div class="grid-column">
+            <!-- Card 2: Local Storage Cleaned -->
+            <div class="activity-card card-cleaned">
+              <div class="card-header-mini">
+                <span>Temizlenen Disk Alanı</span>
+                <span class="info-icon">ℹ️</span>
+              </div>
+              <h2 class="card-large-title" id="cleaned-total-size">205,12 GB</h2>
+              <p class="card-green-badge" id="cleaned-status-badge">▲ 152 GB serbest kaldı</p>
+              
+              <!-- Proportional Segmented Progress Bar -->
+              <div class="segmented-bar-wrapper">
+                <div class="segmented-bar-fill seg-green" id="seg-fill-system" style="width: 25%"></div>
+                <div class="segmented-bar-fill seg-blue" id="seg-fill-personal" style="width: 50%"></div>
+                <div class="segmented-bar-fill seg-purple" id="seg-fill-apps" style="width: 25%"></div>
+              </div>
+
+              <div class="breakdown-list">
+                <div class="breakdown-row">
+                  <span class="dot green"></span>
+                  <span class="row-label">Sistem Çöpü</span>
+                  <strong class="row-value" id="breakdown-system">0 KB</strong>
+                </div>
+                <div class="breakdown-row">
+                  <span class="dot blue"></span>
+                  <span class="row-label">Kişisel Dosyalar</span>
+                  <strong class="row-value" id="breakdown-personal">0 KB</strong>
+                </div>
+                <div class="breakdown-row">
+                  <span class="dot purple"></span>
+                  <span class="row-label">Uygulamalar</span>
+                  <strong class="row-value" id="breakdown-apps">0 KB</strong>
+                </div>
               </div>
             </div>
-            <div class="shortcut-card" data-tab="developer">
-              <span class="shortcut-icon">🛠️</span>
-              <div class="shortcut-body">
-                <h4>Geliştirici Dosyaları</h4>
-                <p class="size-text" id="shortcut-developer-size">...</p>
-                <p class="desc">Geliştirici önbellekleri.</p>
+
+            <!-- Card 5: Malware Scan -->
+            <div class="activity-card card-security">
+              <div class="card-header-mini">
+                <span>Güvenlik & Tehditler</span>
+                <span class="info-icon">ℹ️</span>
+              </div>
+              <h2 class="card-large-title">1 Milyon Öge</h2>
+              <p class="card-green-badge">▲ Tarandı ve Güvenli</p>
+              
+              <div class="security-history-row">
+                <span class="sec-badge">🖐️</span>
+                <span>Tehdit Geçmişi: 0 zararlı öge</span>
               </div>
             </div>
-            <div class="shortcut-card" data-tab="large-files">
-              <span class="shortcut-icon">📂</span>
-              <div class="shortcut-body">
-                <h4>Büyük Dosyalar</h4>
-                <p class="size-text" id="shortcut-large-size">...</p>
-                <p class="desc">100MB+ büyüklüğündeki dosyalar.</p>
+          </div>
+
+          <!-- Column 3 -->
+          <div class="grid-column">
+            <!-- Card 3: Total Time Saved -->
+            <div class="activity-card card-time">
+              <div class="card-header-mini">
+                <span>Kazanılan Toplam Zaman</span>
+                <span class="info-icon">ℹ️</span>
               </div>
+              <h2 class="card-large-title">7 Gün 12 Saat</h2>
+              <p class="card-green-badge">▲ 4 Gün 22 Saat tasarruf</p>
+              
+              <!-- Curved Graph representation inside SVG -->
+              <div class="graph-svg-wrapper">
+                <svg viewBox="0 0 100 48" class="graph-svg">
+                  <path d="M0,38 C35,42 65,5 100,10" fill="none" stroke="url(#graph-grad)" stroke-width="2.5" stroke-linecap="round"></path>
+                  <circle cx="85" cy="12" r="3.5" class="glowing-graph-dot"></circle>
+                  <defs>
+                    <linearGradient id="graph-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="rgba(59, 130, 246, 0.2)" />
+                      <stop offset="100%" stop-color="#22d3ee" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+
+              <div class="time-breakdown">
+                <span class="time-breakdown-title">Etkinlik Zamanı</span>
+                <p>• Sistem Temizliği: + 6g 20sa</p>
+                <p>• Kaldırılan Uygulamalar: + 1g 38sa</p>
+                <p>• Çöp Artıkları Temizliği: + 1sa 35d</p>
+              </div>
+            </div>
+
+            <!-- Card 6: Cloud Cleanup -->
+            <div class="activity-card card-cloud">
+              <div class="card-header-mini">
+                <span>Bulut Alan Ölçümü</span>
+                <span class="info-icon">☁️</span>
+              </div>
+              <h2 class="card-mid-title">Bulut Depolama</h2>
+              <p class="cloud-desc-mini">Serbest kalan GB'ları saymak için bulut hesabını bağlayın.</p>
+              <button class="cloud-goto-btn" id="btn-dashboard-cloud-goto">Bulut Temizliğine Git</button>
             </div>
           </div>
         </div>
 
+        <!-- Bottom Action button trigger Scan/Re-scan -->
+        <div class="dashboard-scan-bar">
+          <button class="primary-btn scan-trigger-capsule" id="btn-start-scan">
+            🔄 PC'yi Tara ve Analiz Et
+          </button>
+        </div>
       </div>
 
       <!-- Tab 2: System Data Clean -->

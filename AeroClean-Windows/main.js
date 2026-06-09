@@ -142,7 +142,7 @@ ipcMain.handle('scan-path', async (event, { category, basePath }) => {
       }
     }
   } catch (e) {
-    print("Scan failed: " + e.message);
+    console.error("Scan failed: " + e.message);
   }
   return items.sort((a, b) => b.size - a.size);
 });

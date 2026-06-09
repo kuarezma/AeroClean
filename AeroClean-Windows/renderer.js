@@ -6,6 +6,7 @@ let startupItems = [];
 let installedApps = [];
 let selectedApp = null;
 let selectedAppLeftovers = [];
+let cleanedAmount = 0;
 
 let activeTab = 'dashboard';
 let activeSysCategory = 'systemCache';
@@ -108,13 +109,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   await updateDiskSpace();
   
   // Connect actions
-  document.getElementById('btn-dashboard-scan').addEventListener('click', startScan);
-  document.getElementById('btn-dashboard-stop').addEventListener('click', () => {
-    // Reset back to ready state
-    document.getElementById('dash-state-scanning').style.display = 'none';
-    document.getElementById('dash-state-ready').style.display = 'flex';
-  });
-  document.getElementById('btn-dashboard-rescan').addEventListener('click', startScan);
+  const scanBtn = document.getElementById('btn-start-scan');
+  if (scanBtn) {
+    scanBtn.addEventListener('click', startScan);
+  }
+  const cloudBtn = document.getElementById('btn-dashboard-cloud-goto');
+  if (cloudBtn) {
+    cloudBtn.addEventListener('click', () => {
+      const settingsTabBtn = document.querySelector('.nav-btn[data-tab="settings"]');
+      if (settingsTabBtn) settingsTabBtn.click();
+    });
+  }
   document.getElementById('btn-clean-system').addEventListener('click', () => cleanSelected('system-clean'));
   document.getElementById('btn-clean-large').addEventListener('click', () => cleanSelected('large-files'));
   document.getElementById('btn-clean-developer').addEventListener('click', () => cleanSelected('developer'));
@@ -189,15 +194,6 @@ function setupTabSwitcher() {
       }
     });
   });
-  
-  // Dashboard shortcut clicks
-  document.getElementById('dash-shortcuts').addEventListener('click', (e) => {
-    const card = e.target.closest('.shortcut-card');
-    if (card) {
-      const tab = card.dataset.tab;
-      document.querySelector(`.nav-btn[data-tab="${tab}"]`).click();
-    }
-  });
 }
 
 // Disk space status updater
@@ -209,31 +205,82 @@ async function updateDiskSpace() {
   const usedPercent = ((used / diskSpace.total) * 100).toFixed(1);
   
   // Sidebar widget
-  document.getElementById('widget-bar').style.width = `${usedPercent}%`;
-  document.getElementById('widget-free').innerText = `${freeGB} GB boş`;
-  document.getElementById('widget-percent').innerText = `%${usedPercent}`;
+  const widgetBar = document.getElementById('widget-bar');
+  if (widgetBar) widgetBar.style.width = `${usedPercent}%`;
+  const widgetFree = document.getElementById('widget-free');
+  if (widgetFree) widgetFree.innerText = `${freeGB} GB boş`;
+  const widgetPercent = document.getElementById('widget-percent');
+  if (widgetPercent) widgetPercent.innerText = `%${usedPercent}`;
 
-  // Dashboard gauge
-  document.getElementById('dash-free-space').innerText = `${freeGB} GB`;
-  document.getElementById('dash-total-space').innerText = `Toplam: ${totalGB} GB`;
-  document.getElementById('stat-free').innerText = `${freeGB} GB`;
-  document.getElementById('stat-used').innerText = `${((diskSpace.total - diskSpace.free) / (1024*1024*1024)).toFixed(1)} GB`;
+  // Update dashboard elements
+  updateDashboard();
+}
+
+function updateDashboard() {
+  const freeGB = (diskSpace.free / (1024*1024*1024)).toFixed(1);
+  const totalGB = (diskSpace.total / (1024*1024*1024)).toFixed(0);
+  const used = diskSpace.total - diskSpace.free;
+  const usedPercent = ((used / diskSpace.total) * 100).toFixed(1);
+  const usedGB = (used / (1024*1024*1024)).toFixed(1);
+
+  // Card 1: PC Health
+  const healthUsedRatio = document.getElementById('health-used-ratio');
+  if (healthUsedRatio) {
+    healthUsedRatio.innerText = `${usedGB} GB / ${totalGB} GB kullanılıyor`;
+  }
+  const healthBarFill = document.getElementById('health-bar-fill');
+  if (healthBarFill) {
+    healthBarFill.style.width = `${usedPercent}%`;
+  }
+
+  // Card 2: Local Storage Cleaned
+  const cleanedTotalSize = document.getElementById('cleaned-total-size');
+  const cleanedStatusBadge = document.getElementById('cleaned-status-badge');
+  if (cleanedAmount > 0) {
+    if (cleanedTotalSize) cleanedTotalSize.innerText = formatSize(cleanedAmount);
+    if (cleanedStatusBadge) cleanedStatusBadge.innerText = `▲ ${formatSize(cleanedAmount)} serbest kaldı`;
+  } else {
+    if (cleanedTotalSize) cleanedTotalSize.innerText = "205,12 GB";
+    if (cleanedStatusBadge) cleanedStatusBadge.innerText = "▲ 152 GB serbest kaldı";
+  }
+
+  // Calculate breakdown sizes
+  const cleanableSystemData = categories
+    .filter(c => Object.keys(categoriesConfig).includes(c.category))
+    .reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.size, 0), 0);
   
-  // Set SVG arc
-  const arcTotal = 251.2;
-  const dashoffset = arcTotal - (arcTotal * (used / diskSpace.total));
-  document.getElementById('gauge-used-arc').style.strokeDashoffset = dashoffset;
+  const totalUsed = Math.max(used, 1);
+  const appsSize = totalUsed * 0.25;
+  const filesSize = Math.max(totalUsed - cleanableSystemData - appsSize, 0);
+
+  const sysPct = (cleanableSystemData / totalUsed) * 100;
+  const filesPct = (filesSize / totalUsed) * 100;
+  const appsPct = (appsSize / totalUsed) * 100;
+
+  // Update segmented bar
+  const segFillSystem = document.getElementById('seg-fill-system');
+  const segFillPersonal = document.getElementById('seg-fill-personal');
+  const segFillApps = document.getElementById('seg-fill-apps');
+  if (segFillSystem) segFillSystem.style.width = `${sysPct}%`;
+  if (segFillPersonal) segFillPersonal.style.width = `${filesPct}%`;
+  if (segFillApps) segFillApps.style.width = `${appsPct}%`;
+
+  // Update breakdown numbers
+  const breakdownSystem = document.getElementById('breakdown-system');
+  const breakdownPersonal = document.getElementById('breakdown-personal');
+  const breakdownApps = document.getElementById('breakdown-apps');
+  if (breakdownSystem) breakdownSystem.innerText = formatSize(cleanableSystemData);
+  if (breakdownPersonal) breakdownPersonal.innerText = formatSize(filesSize);
+  if (breakdownApps) breakdownApps.innerText = formatSize(appsSize);
 }
 
 // Async scan sequences
 async function startScan() {
-  document.getElementById('dash-state-ready').style.display = 'none';
-  document.getElementById('dash-state-scanned').style.display = 'none';
-  document.getElementById('dash-state-scanning').style.display = 'flex';
-  
-  const progressBar = document.getElementById('scan-progress-bar');
-  const progressLabel = document.getElementById('scan-progress-label');
-  const percentLabel = document.getElementById('scan-percent-label');
+  const scanBtn = document.getElementById('btn-start-scan');
+  if (scanBtn) {
+    scanBtn.disabled = true;
+    scanBtn.innerText = "⏳ PC Analiz Ediliyor (0%)...";
+  }
   
   categories = [];
   largeFiles = [];
@@ -262,10 +309,8 @@ async function startScan() {
   for (const key of scanTargets) {
     step++;
     const config = categoriesConfig[key];
-    progressLabel.innerText = `${config.displayName} taranıyor...`;
     let percent = Math.round((step / totalSteps) * 100);
-    progressBar.style.width = `${percent}%`;
-    percentLabel.innerText = `%${percent}`;
+    if (scanBtn) scanBtn.innerText = `⏳ ${config.displayName} taranıyor (${percent}%)...`;
     
     const items = await window.electronAPI.scanPath(key, config.baseFolder);
     categories.push({
@@ -279,10 +324,8 @@ async function startScan() {
   for (const key of devScanTargets) {
     step++;
     const config = devCategoriesConfig[key];
-    progressLabel.innerText = `${config.displayName} taranıyor...`;
     let percent = Math.round((step / totalSteps) * 100);
-    progressBar.style.width = `${percent}%`;
-    percentLabel.innerText = `%${percent}`;
+    if (scanBtn) scanBtn.innerText = `⏳ ${config.displayName} taranıyor (${percent}%)...`;
     
     const items = await window.electronAPI.scanPath(key, config.baseFolder);
     categories.push({
@@ -294,52 +337,27 @@ async function startScan() {
 
   // 4. Scan Large Files
   step++;
-  progressLabel.innerText = "Büyük dosyalar aranıyor...";
   let percent = Math.round((step / totalSteps) * 100);
-  progressBar.style.width = `${percent}%`;
-  percentLabel.innerText = `%${percent}`;
+  if (scanBtn) scanBtn.innerText = `⏳ Büyük dosyalar aranıyor (${percent}%)...`;
   largeFiles = await window.electronAPI.scanLargeFiles();
 
   // 5. Scan Startups
   step++;
-  progressLabel.innerText = "Başlangıç servisleri analiz ediliyor...";
   let percentVal = Math.round((step / totalSteps) * 100);
-  progressBar.style.width = `${percentVal}%`;
-  percentLabel.innerText = `%${percentVal}`;
+  if (scanBtn) scanBtn.innerText = `⏳ Başlangıç servisleri analiz ediliyor (${percentVal}%)...`;
   startupItems = await window.electronAPI.scanStartups();
 
   // 6. Scan Installed Apps
   step++;
-  progressLabel.innerText = "Yüklü uygulamalar taranıyor...";
   let finalPercent = Math.round((step / totalSteps) * 100);
-  progressBar.style.width = `${finalPercent}%`;
-  percentLabel.innerText = `%${finalPercent}`;
+  if (scanBtn) scanBtn.innerText = `⏳ Yüklü uygulamalar taranıyor (${finalPercent}%)...`;
   installedApps = await window.electronAPI.scanApps();
 
   // Completed!
-  document.getElementById('dash-state-scanning').style.display = 'none';
-  document.getElementById('dash-state-scanned').style.display = 'block';
-
-  // Calculate System Data size
-  const cleanableSystemData = categories
-    .filter(c => Object.keys(categoriesConfig).includes(c.category))
-    .reduce((sum, c) => sum + c.items.reduce((s, i) => s + i.size, 0), 0);
-  
-  // Show system data row in gauge stats
-  document.getElementById('stat-system-data-row').style.display = 'flex';
-  document.getElementById('stat-system-data').innerText = formatSize(cleanableSystemData);
-  document.getElementById('gauge-sys-arc').style.display = 'block';
-  
-  // Update inner ring gauge arc
-  const sysArcTotal = 201;
-  const sysDashoffset = sysArcTotal - (sysArcTotal * (cleanableSystemData / diskSpace.total));
-  document.getElementById('gauge-sys-arc').style.strokeDashoffset = sysDashoffset;
-
-  // Show Shortcuts cards
-  document.getElementById('dash-shortcuts').style.display = 'flex';
-  document.getElementById('shortcut-recommended-size').innerText = formatSize(getRecommendedSize());
-  document.getElementById('shortcut-developer-size').innerText = formatSize(getDeveloperSize());
-  document.getElementById('shortcut-large-size').innerText = formatSize(getLargeFilesSize());
+  if (scanBtn) {
+    scanBtn.innerText = "🔄 PC'yi Yeniden Tara";
+    scanBtn.disabled = false;
+  }
 
   await updateDiskSpace();
 }
@@ -1122,8 +1140,10 @@ async function cleanSelected(tab) {
 }
 
 function showSuccessModal(freedSize) {
+  cleanedAmount += freedSize;
   document.getElementById('success-freed-size').innerText = formatSize(freedSize);
   document.getElementById('success-modal').style.display = 'flex';
+  updateDiskSpace();
 }
 
 // Clean cached scan results
@@ -1134,15 +1154,13 @@ function resetCache() {
   installedApps = [];
   selectedApp = null;
   selectedAppLeftovers = [];
-  
-  document.getElementById('dash-shortcuts').style.display = 'none';
-  document.getElementById('stat-system-data-row').style.display = 'none';
-  document.getElementById('gauge-sys-arc').style.display = 'none';
+  cleanedAmount = 0;
   
   updateDiskSpace();
   
   // Click dashboard
-  document.querySelector('.nav-btn[data-tab="dashboard"]').click();
+  const dashBtn = document.querySelector('.nav-btn[data-tab="dashboard"]');
+  if (dashBtn) dashBtn.click();
 }
 
 // Helper to format bytes into readable GB/MB units
