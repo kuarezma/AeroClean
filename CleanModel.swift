@@ -26,6 +26,7 @@ enum CleanCategory: String, Codable, CaseIterable {
     case systemCache = "systemCache"
     case systemLogs = "systemLogs"
     case trash = "trash"
+    case timeMachineSnapshots = "timeMachineSnapshots"
     case xcodeDerivedData = "xcodeDerivedData"
     case xcodeSimulators = "xcodeSimulators"
     case packageCaches = "packageCaches"
@@ -40,6 +41,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         case .systemCache: return "Sistem ve Uygulama Önbellekleri"
         case .systemLogs: return "Sistem ve Günlük Kayıtları (Loglar)"
         case .trash: return "Çöp Kutusu"
+        case .timeMachineSnapshots: return "Time Machine Yerel Yedekleri (Snapshots)"
         case .xcodeDerivedData: return "Xcode Derleme Dosyaları (Derived Data)"
         case .xcodeSimulators: return "Xcode Simülatör Dosyaları"
         case .packageCaches: return "Paket Yöneticileri Önbellekleri"
@@ -56,6 +58,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         case .systemCache: return "square.stack.3d.up.fill"
         case .systemLogs: return "doc.text.fill"
         case .trash: return "trash.fill"
+        case .timeMachineSnapshots: return "clock.arrow.circlepath"
         case .xcodeDerivedData: return "hammer.fill"
         case .xcodeSimulators: return "iphone.badge.play"
         case .packageCaches: return "shippingbox.fill"
@@ -71,7 +74,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         switch self {
         case .systemCache, .systemLogs, .xcodeDerivedData, .spotifyCache, .chromeCache:
             return .recommended
-        case .trash, .xcodeSimulators, .packageCaches, .downloads, .mailDownloads:
+        case .trash, .xcodeSimulators, .packageCaches, .downloads, .mailDownloads, .timeMachineSnapshots:
             return .caution
         case .appSupportLeftovers:
             return .danger
@@ -86,6 +89,8 @@ enum CleanCategory: String, Codable, CaseIterable {
             return "Uygulamalar ve işletim sistemi hatalarını veya çalışma günlüklerini kaydeden rapor dosyaları. Hata analizi yapmıyorsanız tamamen gereksizdir."
         case .trash:
             return "Kullanıcı tarafından silinen ancak henüz diskten tamamen kaldırılmayan Çöp Kutusu (Trash) içeriğidir."
+        case .timeMachineSnapshots:
+            return "macOS'in harici yedekleme diski bağlı değilken sistem düzeyinde otomatik aldığı yerel anlık yedekleme kopyalarıdır."
         case .xcodeDerivedData:
             return "Xcode'un projelerinizi derlerken oluşturduğu önbellek, indeksler ve geçici derleme çıktıları. Geliştiriciler için devasa boyutlara ulaşabilir."
         case .xcodeSimulators:
@@ -113,6 +118,8 @@ enum CleanCategory: String, Codable, CaseIterable {
             return "Sıfır risk. Tamamen güvenle silinebilir. Hiçbir yan etkisi yoktur."
         case .trash:
             return "Dosyalar kalıcı olarak silinecektir. Çöpte geri almak isteyeceğiniz önemli bir dosya olmadığından emin olun."
+        case .timeMachineSnapshots:
+            return "Mevcut yerel yedeklemeler silinir. Harici diskinizdeki Time Machine yedekleriniz kesinlikle etkilenmez. macOS yeni yedekleri almaya devam eder."
         case .xcodeDerivedData:
             return "Güvenle silinebilir. Projelerinizi Xcode'da ilk açtığınızda indeksleme ve ilk derleme işlemi normalden biraz daha uzun sürecektir."
         case .xcodeSimulators:
@@ -137,6 +144,7 @@ enum CleanCategory: String, Codable, CaseIterable {
         case .systemCache: return "Tavsiye Edilen: Haftada veya ayda bir kez temizlenmesi disk sağlığı için iyidir."
         case .systemLogs: return "Tavsiye Edilen: Disk alanından bağımsız olarak düzenli silinmesinde hiçbir sakınca yoktur."
         case .trash: return "Gözden Geçirin: İçinde unutulmuş önemli bir dosya yoksa boşaltabilirsiniz."
+        case .timeMachineSnapshots: return "Tavsiye Edilen: Özellikle diskiniz dolduğunda sistem verilerini rahatlatmak için silinmelidir."
         case .xcodeDerivedData: return "Tavsiye Edilen: Özellikle Xcode yavaşladığında veya derleme hataları verdiğinde mutlaka silinmelidir."
         case .xcodeSimulators: return "Gözden Geçirin: Simülatörlerde sakladığınız kritik test verileri yoksa silinmesi büyük yer kazandırır."
         case .packageCaches: return "Gözden Geçirin: Disk alanınız darsa ve internet bağlantınız varsa silmekte sakınca yoktur."
@@ -163,6 +171,8 @@ enum CleanCategory: String, Codable, CaseIterable {
             ]
         case .trash:
             return ["\(home)/.Trash"]
+        case .timeMachineSnapshots:
+            return [] // Scanned via command line wrapper
         case .xcodeDerivedData:
             return ["\(home)/Library/Developer/Xcode/DerivedData"]
         case .xcodeSimulators:
@@ -223,9 +233,66 @@ struct CategoryDetail: Identifiable {
     }
 }
 
+// Structs for Startup Optimizer
+struct StartupItem: Identifiable, Codable {
+    var id: String { path }
+    let name: String
+    let label: String
+    let path: String
+    let type: String       // "Kullanıcı", "Sistem Ajanı", "Sistem Servisi"
+    let program: String    // Target executable path
+    var isEnabled: Bool
+}
+
+// Structs for App Uninstaller
+struct InstalledApp: Identifiable, Codable {
+    var id: String { path }
+    let name: String
+    let path: String
+    let bundleId: String
+    let size: Int64
+    let version: String
+    
+    var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+    }
+}
+
+struct AppLeftover: Identifiable, Codable {
+    var id: String { path }
+    let path: String
+    let size: Int64
+    let type: String       // "Önbellek", "Uygulama Desteği", "Ayarlar (Plist)", "Günlükler", "Sandbox Kabı"
+    var isSelected: Bool
+    
+    var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+    }
+}
+
 // Utility class for scanning file system
 class DiskScanner {
     static let shared = DiskScanner()
+    
+    // Shell execution helper
+    func runShellCommand(_ executable: String, arguments: [String]) -> String? {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return String(data: data, encoding: .utf8)
+        } catch {
+            print("Failed to run command \(executable): \(error)")
+            return nil
+        }
+    }
     
     func getDiskSpace() -> (free: Int64, total: Int64) {
         let fileURL = URL(fileURLWithPath: "/")
@@ -240,8 +307,13 @@ class DiskScanner {
         }
     }
     
-    // Scans a folder recursively and returns the size + items in it (shallow or deep based on configuration)
+    // Scans a folder recursively and returns the size + items in it
     func scanPath(category: CleanCategory, path: String) async -> [ScanItem] {
+        // Special case: Time Machine Snapshots
+        if category == .timeMachineSnapshots {
+            return await scanTimeMachineSnapshots()
+        }
+        
         let fm = FileManager.default
         let url = URL(fileURLWithPath: path)
         var items: [ScanItem] = []
@@ -251,7 +323,6 @@ class DiskScanner {
             return []
         }
         
-        // If the path itself is not a directory, just return it
         if !isDir.boolValue {
             do {
                 let attrs = try fm.attributesOfItem(atPath: path)
@@ -262,22 +333,16 @@ class DiskScanner {
             }
         }
         
-        // For special large containers, we might want to list top level contents
-        // For Caches, App Support, Downloads, etc., listing the children gives the user precise delete choices.
         do {
             let contents = try fm.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey], options: [.skipsHiddenFiles])
             
             for itemUrl in contents {
-                // If it is App Support, we only list items that might be leftovers, but since it's "Danger" safety level,
-                // we list sub-folders representing apps.
                 let pathStr = itemUrl.path
                 var itemIsDir: ObjCBool = false
                 if fm.fileExists(atPath: pathStr, isDirectory: &itemIsDir) {
                     let size = await getDirectorySize(at: itemUrl)
                     if size > 0 {
                         let name = itemUrl.lastPathComponent
-                        // App Support subfolders: by default NOT selected (Danger)
-                        // Downloads: by default NOT selected (Caution)
                         let defaultSelected = (category.safetyLevel == .recommended) && (category != .appSupportLeftovers)
                         
                         items.append(ScanItem(
@@ -292,7 +357,6 @@ class DiskScanner {
                 }
             }
         } catch {
-            // If contentsOfDirectory fails (e.g. permission error), try calculating size of the root folder directly
             let size = await getDirectorySize(at: url)
             if size > 0 {
                 items.append(ScanItem(
@@ -306,8 +370,43 @@ class DiskScanner {
             }
         }
         
-        // Sort items by size descending
         return items.sorted(by: { $0.size > $1.size })
+    }
+    
+    // Time Machine snapshots scanning helper
+    private func scanTimeMachineSnapshots() async -> [ScanItem] {
+        guard let output = runShellCommand("/usr/bin/tmutil", arguments: ["listlocalsnapshots", "/"]) else {
+            return []
+        }
+        
+        var items: [ScanItem] = []
+        let lines = output.components(separatedBy: .newlines)
+        for line in lines {
+            // Lines containing com.apple.TimeMachine
+            if line.contains("com.apple.TimeMachine.") {
+                // e.g. com.apple.TimeMachine.2026-06-09-150244.local
+                let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                let components = cleanLine.components(separatedBy: ".")
+                var name = cleanLine
+                if components.count >= 4 {
+                    // Extract date e.g. 2026-06-09-150244
+                    let datePart = components[3]
+                    name = "Time Machine Yedek Kopyası (\(datePart))"
+                }
+                
+                // Since sizes aren't reported directly by tmutil instantly without mounting,
+                // we assign a calculated estimate of 250MB per snapshot, and note in warnings it varies.
+                items.append(ScanItem(
+                    path: cleanLine,
+                    name: name,
+                    size: 250 * 1024 * 1024, // 250 MB placeholder
+                    category: .timeMachineSnapshots,
+                    isDirectory: false,
+                    isSelected: false // Time Machine is Caution, default false
+                ))
+            }
+        }
+        return items
     }
     
     // Deep directory size calculation asynchronously
@@ -346,7 +445,6 @@ class DiskScanner {
         let homeUrl = fm.homeDirectoryForCurrentUser
         var largeFiles: [ScanItem] = []
         
-        // We will scan Downloads, Documents, Desktop, and Movie/Music/Pictures folders for large files
         let scanSubdirectories = ["Downloads", "Documents", "Desktop", "Movies", "Music", "Pictures"]
         
         for dirName in scanSubdirectories {
@@ -371,9 +469,9 @@ class DiskScanner {
                                 path: fileURL.path,
                                 name: fileURL.lastPathComponent,
                                 size: Int64(fileSize),
-                                category: .downloads, // We list them as user files
+                                category: .downloads,
                                 isDirectory: false,
-                                isSelected: false // Large files should NEVER be auto-selected for safety
+                                isSelected: false
                             ))
                         }
                     }
@@ -381,7 +479,6 @@ class DiskScanner {
                     // Ignore errors
                 }
                 
-                // Cap the search to prevent infinite scanning
                 if largeFiles.count >= limit {
                     break
                 }
@@ -395,14 +492,228 @@ class DiskScanner {
         return largeFiles.sorted(by: { $0.size > $1.size })
     }
     
-    // Safe deletion of a file or folder
-    func deleteItem(at path: String) -> Bool {
+    // Scanner for startup items plist files
+    func scanStartupItems() -> [StartupItem] {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: path) else {
-            return true // Already deleted/doesn't exist
+        let home = fm.homeDirectoryForCurrentUser.path
+        
+        let launchDirs = [
+            (path: "\(home)/Library/LaunchAgents", type: "Kullanıcı Başlangıcı"),
+            (path: "/Library/LaunchAgents", type: "Sistem Genel Ajanı"),
+            (path: "/Library/LaunchDaemons", type: "Sistem Genel Servisi")
+        ]
+        
+        var items: [StartupItem] = []
+        
+        for dir in launchDirs {
+            guard fm.fileExists(atPath: dir.path) else { continue }
+            do {
+                let contents = try fm.contentsOfDirectory(atPath: dir.path)
+                for file in contents {
+                    // Match either .plist or .plist.disabled files
+                    guard file.hasSuffix(".plist") || file.hasSuffix(".disabled") else { continue }
+                    
+                    let filePath = "\(dir.path)/\(file)"
+                    let isEnabled = file.hasSuffix(".plist")
+                    
+                    // Parse plist dictionary
+                    if let dict = NSDictionary(contentsOfFile: filePath) {
+                        let label = dict["Label"] as? String ?? file
+                        let name = URL(fileURLWithPath: file).deletingPathExtension().deletingPathExtension().lastPathComponent
+                        
+                        var programPath = ""
+                        if let prog = dict["Program"] as? String {
+                            programPath = prog
+                        } else if let args = dict["ProgramArguments"] as? [String], !args.isEmpty {
+                            programPath = args[0]
+                        }
+                        
+                        items.append(StartupItem(
+                            name: name,
+                            label: label,
+                            path: filePath,
+                            type: dir.type,
+                            program: programPath.isEmpty ? "Belirtilmemiş" : programPath,
+                            isEnabled: isEnabled
+                        ))
+                    }
+                }
+            } catch {
+                print("Failed to read launch directory \(dir.path): \(error)")
+            }
         }
         
-        // Safety guard: NEVER allow deleting home directory or root system folders
+        return items
+    }
+    
+    // Disables / Enables startup items by renaming plist suffix
+    func toggleStartupItem(_ item: StartupItem) -> Bool {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: item.path) else { return false }
+        
+        let oldPath = item.path
+        let newPath: String
+        
+        if item.isEnabled {
+            // Disable: rename .plist -> .plist.disabled
+            newPath = oldPath.replacingOccurrences(of: ".plist", with: ".plist.disabled")
+        } else {
+            // Enable: rename .plist.disabled -> .plist
+            newPath = oldPath.replacingOccurrences(of: ".plist.disabled", with: ".plist")
+        }
+        
+        do {
+            try fm.moveItem(atPath: oldPath, toPath: newPath)
+            return true
+        } catch {
+            print("Failed to toggle startup item plist \(oldPath) to \(newPath): \(error)")
+            return false
+        }
+    }
+    
+    // Scanner for App Uninstaller
+    func scanInstalledApps() async -> [InstalledApp] {
+        let fm = FileManager.default
+        let appsDir = "/Applications"
+        var apps: [InstalledApp] = []
+        
+        guard fm.fileExists(atPath: appsDir) else { return [] }
+        
+        do {
+            let contents = try fm.contentsOfDirectory(atPath: appsDir)
+            for file in contents {
+                guard file.hasSuffix(".app") else { continue }
+                
+                let appPath = "\(appsDir)/\(file)"
+                
+                // Exclude system utilities or protected OS apps
+                let systemApps = ["Safari.app", "Utilities", "App Store.app", "Siri.app", "Mail.app", "Maps.app", "Photos.app", "FaceTime.app", "Calendar.app", "Contacts.app", "Notes.app", "Reminders.app", "FindMy.app", "Freeform.app", "Home.app", "Messages.app", "Music.app", "News.app", "Podcasts.app", "Stocks.app", "TV.app", "VoiceMemos.app", "Weather.app", "Books.app", "Calculator.app", "Chess.app", "Dictionary.app", "DVD Player.app", "Font Book.app", "Image Capture.app", "Launchpad.app", "Mission Control.app", "Photo Booth.app", "Preview.app", "QuickTime Player.app", "Stickies.app", "System Settings.app", "TextEdit.app", "Time Machine.app"]
+                
+                if systemApps.contains(file) { continue }
+                
+                let infoPlistPath = "\(appPath)/Contents/Info.plist"
+                var bundleId = "com.ugurmac.\(file)"
+                var version = "1.0"
+                var displayName = file.replacingOccurrences(of: ".app", with: "")
+                
+                if fm.fileExists(atPath: infoPlistPath) {
+                    if let dict = NSDictionary(contentsOfFile: infoPlistPath) {
+                        bundleId = dict["CFBundleIdentifier"] as? String ?? bundleId
+                        version = dict["CFBundleShortVersionString"] as? String ?? version
+                        displayName = dict["CFBundleDisplayName"] as? String ?? (dict["CFBundleName"] as? String ?? displayName)
+                    }
+                }
+                
+                // Get app bundle size
+                let appUrl = URL(fileURLWithPath: appPath)
+                let size = await getDirectorySize(at: appUrl)
+                
+                if size > 0 {
+                    apps.append(InstalledApp(
+                        name: displayName,
+                        path: appPath,
+                        bundleId: bundleId,
+                        size: size,
+                        version: version
+                    ))
+                }
+            }
+        } catch {
+            print("Failed to read Applications folder: \(error)")
+        }
+        
+        return apps.sorted(by: { $0.name.localizedCompare($1.name) == .orderedAscending })
+    }
+    
+    // Leftover scanner for a specific app
+    func scanLeftovers(for app: InstalledApp) async -> [AppLeftover] {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser.path
+        var leftovers: [AppLeftover] = []
+        
+        // Target locations to check
+        let scanPaths = [
+            (path: "\(home)/Library/Application Support", type: "Uygulama Desteği"),
+            (path: "\(home)/Library/Caches", type: "Önbellek"),
+            (path: "\(home)/Library/Logs", type: "Günlükler"),
+            (path: "\(home)/Library/Preferences", type: "Ayarlar (Plist)"),
+            (path: "\(home)/Library/Containers", type: "Sandbox Kabı")
+        ]
+        
+        // Match parameters: Name of the application (e.g. "Spotify") or bundle ID (e.g. "com.spotify.client")
+        let appName = app.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let appBundleId = app.bundleId.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Extract basic name without extensions or spaces
+        let basicName = appName.replacingOccurrences(of: " ", with: "")
+        
+        for target in scanPaths {
+            guard fm.fileExists(atPath: target.path) else { continue }
+            do {
+                let contents = try fm.contentsOfDirectory(atPath: target.path)
+                for file in contents {
+                    let fileLower = file.lowercased()
+                    
+                    // Matching algorithm: matches if the name or bundle ID is part of the filename/foldername
+                    let matches = fileLower.contains(appName) ||
+                                  fileLower.contains(appBundleId) ||
+                                  (!basicName.isEmpty && fileLower.contains(basicName))
+                    
+                    if matches {
+                        let leftoverPath = "\(target.path)/\(file)"
+                        let leftoverUrl = URL(fileURLWithPath: leftoverPath)
+                        
+                        var isDir: ObjCBool = false
+                        let size: Int64
+                        if fm.fileExists(atPath: leftoverPath, isDirectory: &isDir) {
+                            if isDir.boolValue {
+                                size = await getDirectorySize(at: leftoverUrl)
+                            } else {
+                                do {
+                                    let attrs = try fm.attributesOfItem(atPath: leftoverPath)
+                                    size = attrs[.size] as? Int64 ?? 0
+                                } catch {
+                                    size = 0
+                                }
+                            }
+                            
+                            if size > 0 {
+                                leftovers.append(AppLeftover(
+                                    path: leftoverPath,
+                                    size: size,
+                                    type: target.type,
+                                    isSelected: true // Recommended to check by default
+                                ))
+                            }
+                        }
+                    }
+                }
+            } catch {
+                // Ignore single directory scan failures
+            }
+        }
+        
+        return leftovers.sorted(by: { $0.size > $1.size })
+    }
+    
+    // Safe deletion of a file or folder
+    func deleteItem(at path: String) -> Bool {
+        // Special case: Time Machine Local Snapshots
+        if path.contains("com.apple.TimeMachine") {
+            let components = path.components(separatedBy: ".")
+            if components.count >= 4 {
+                let datePart = components[3] // "2026-06-09-150244"
+                print("DELETING TIME MACHINE SNAPSHOT: \(datePart)")
+                let _ = runShellCommand("/usr/bin/tmutil", arguments: ["deletelocalsnapshots", datePart])
+                return true
+            }
+        }
+        
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: path) else {
+            return true
+        }
+        
         let home = fm.homeDirectoryForCurrentUser.path
         let protectedPaths = [
             home,

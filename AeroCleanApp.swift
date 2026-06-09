@@ -44,6 +44,10 @@ struct MainContainerView: View {
                         SystemCleanView()
                     case .largeFiles:
                         LargeFilesView()
+                    case .startups:
+                        StartupsView()
+                    case .uninstaller:
+                        UninstallerView()
                     case .developer:
                         DeveloperCleanView()
                     case .settings:

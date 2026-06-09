@@ -59,6 +59,8 @@ swiftc -O -parse-as-library \
     DashboardView.swift \
     SystemCleanView.swift \
     LargeFilesView.swift \
+    StartupsView.swift \
+    UninstallerView.swift \
     DeveloperCleanView.swift \
     SettingsView.swift \
     AeroCleanApp.swift

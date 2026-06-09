@@ -7,6 +7,8 @@ class AppState: ObservableObject {
         case dashboard = "Dashboard"
         case systemClean = "Sistem Verileri"
         case largeFiles = "Büyük Dosyalar"
+        case startups = "Başlangıç Öğeleri"
+        case uninstaller = "Uygulama Kaldırıcı"
         case developer = "Geliştirici"
         case settings = "Ayarlar & Yardım"
         
@@ -15,6 +17,8 @@ class AppState: ObservableObject {
             case .dashboard: return "gauge.medium"
             case .systemClean: return "cpu"
             case .largeFiles: return "doc.on.doc.fill"
+            case .startups: return "bolt.horizontal.fill"
+            case .uninstaller: return "app.badge.minus"
             case .developer: return "hammer.fill"
             case .settings: return "gearshape.fill"
             }
@@ -39,6 +43,18 @@ class AppState: ObservableObject {
     // Clean Categories Data
     @Published var categories: [CategoryDetail] = []
     @Published var largeFiles: [ScanItem] = []
+    
+    // Startup Items States
+    @Published var startupItems: [StartupItem] = []
+    @Published var isScanningStartups = false
+    
+    // Application Uninstaller States
+    @Published var installedApps: [InstalledApp] = []
+    @Published var isScanningApps = false
+    @Published var selectedApp: InstalledApp? = nil
+    @Published var selectedAppLeftovers: [AppLeftover] = []
+    @Published var isScanningLeftovers = false
+    @Published var isUninstallingApp = false
     
     // Cleaning Stats
     @Published var cleanedAmount: Int64 = 0
@@ -105,8 +121,8 @@ class AppState: ObservableObject {
             let foundLargeFiles = await scanner.scanLargeFiles(minSize: 100 * 1024 * 1024)
             completedSteps += 1.0
             
-            // Calculate System Data size (represented by Caches, Logs, App support, Xcode data)
-            let systemDataCats: [CleanCategory] = [.systemCache, .systemLogs, .xcodeDerivedData, .xcodeSimulators, .packageCaches, .spotifyCache, .chromeCache, .appSupportLeftovers]
+            // Calculate System Data size (represented by Caches, Logs, App support, Xcode data, Time Machine snapshots)
+            let systemDataCats: [CleanCategory] = [.systemCache, .systemLogs, .xcodeDerivedData, .xcodeSimulators, .packageCaches, .spotifyCache, .chromeCache, .appSupportLeftovers, .timeMachineSnapshots]
             let computedSystemData = updatedCategories
                 .filter { systemDataCats.contains($0.category) }
                 .reduce(0) { $0 + $1.totalSize }
@@ -118,6 +134,10 @@ class AppState: ObservableObject {
             self.isScanning = false
             self.hasScanned = true
             self.loadDiskSpace()
+            
+            // Sync startups and apps scans too
+            self.scanStartups()
+            self.scanApps()
         }
     }
     
@@ -137,13 +157,11 @@ class AppState: ObservableObject {
                     var remainingItems: [ScanItem] = []
                     
                     for item in catDetail.items {
-                        // Delete only if selected and it's recommended or user checked it
                         if item.isSelected {
                             let success = scanner.deleteItem(at: item.path)
                             if success {
                                 deletedBytes += item.size
                             } else {
-                                // Keep it in the list if deletion failed
                                 remainingItems.append(item)
                             }
                         } else {
@@ -177,7 +195,7 @@ class AppState: ObservableObject {
             }
             
             // Re-calculate system data size
-            let systemDataCats: [CleanCategory] = [.systemCache, .systemLogs, .xcodeDerivedData, .xcodeSimulators, .packageCaches, .spotifyCache, .chromeCache, .appSupportLeftovers]
+            let systemDataCats: [CleanCategory] = [.systemCache, .systemLogs, .xcodeDerivedData, .xcodeSimulators, .packageCaches, .spotifyCache, .chromeCache, .appSupportLeftovers, .timeMachineSnapshots]
             let computedSystemData = categories
                 .filter { systemDataCats.contains($0.category) }
                 .reduce(0) { $0 + $1.totalSize }
@@ -196,8 +214,6 @@ class AppState: ObservableObject {
             if let itemIndex = categories[catIndex].items.firstIndex(where: { $0.id == itemId }) {
                 categories[catIndex].items[itemIndex].isSelected.toggle()
                 
-                // If safety is danger, make sure to alert or just allow selection
-                // Update parent selection category if needed
                 let allSelected = categories[catIndex].items.allSatisfy { $0.isSelected }
                 categories[catIndex].isSelected = allSelected
             }
@@ -220,6 +236,90 @@ class AppState: ObservableObject {
     func toggleLargeFileSelection(itemId: String) {
         if let itemIndex = largeFiles.firstIndex(where: { $0.id == itemId }) {
             largeFiles[itemIndex].isSelected.toggle()
+        }
+    }
+    
+    // --- Startup Optimizer Logic ---
+    func scanStartups() {
+        isScanningStartups = true
+        let items = DiskScanner.shared.scanStartupItems()
+        self.startupItems = items
+        isScanningStartups = false
+    }
+    
+    func toggleStartup(item: StartupItem) {
+        let success = DiskScanner.shared.toggleStartupItem(item)
+        if success {
+            scanStartups()
+        }
+    }
+    
+    // --- Application Uninstaller Logic ---
+    func scanApps() {
+        isScanningApps = true
+        Task {
+            let apps = await DiskScanner.shared.scanInstalledApps()
+            self.installedApps = apps
+            self.isScanningApps = false
+            
+            // Auto-select first app if nothing is active
+            if self.selectedApp == nil, let firstApp = apps.first {
+                self.selectApp(firstApp)
+            }
+        }
+    }
+    
+    func selectApp(_ app: InstalledApp) {
+        self.selectedApp = app
+        self.selectedAppLeftovers = []
+        isScanningLeftovers = true
+        
+        Task {
+            let leftovers = await DiskScanner.shared.scanLeftovers(for: app)
+            self.selectedAppLeftovers = leftovers
+            self.isScanningLeftovers = false
+        }
+    }
+    
+    func toggleLeftoverSelection(itemId: String) {
+        if let index = selectedAppLeftovers.firstIndex(where: { $0.id == itemId }) {
+            selectedAppLeftovers[index].isSelected.toggle()
+        }
+    }
+    
+    func uninstallSelectedApp() {
+        guard let app = selectedApp, !isUninstallingApp else { return }
+        isUninstallingApp = true
+        
+        Task {
+            let scanner = DiskScanner.shared
+            var deletedBytes: Int64 = 0
+            
+            // 1. Delete leftovers
+            for leftover in selectedAppLeftovers {
+                if leftover.isSelected {
+                    let success = scanner.deleteItem(at: leftover.path)
+                    if success {
+                        deletedBytes += leftover.size
+                    }
+                }
+            }
+            
+            // 2. Delete app bundle itself
+            let success = scanner.deleteItem(at: app.path)
+            if success {
+                deletedBytes += app.size
+            }
+            
+            self.cleanedAmount = deletedBytes
+            self.selectedApp = nil
+            self.selectedAppLeftovers = []
+            self.isUninstallingApp = false
+            self.showCleanSuccessAlert = true
+            
+            // Rescan
+            self.scanApps()
+            self.loadDiskSpace()
         }
     }
 }
