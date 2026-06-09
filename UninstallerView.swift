@@ -130,29 +130,32 @@ struct UninstallerView: View {
                     // Middle Column: Selected App Leftovers review
                     VStack(alignment: .leading, spacing: 12) {
                         if let selectedApp = appState.selectedApp {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("\(selectedApp.name) Disk Kalıntıları")
-                                        .font(.headline)
-                                    Text("Ana Paket Boyutu: \(selectedApp.formattedSize)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("\(selectedApp.name) Disk Kalıntıları")
+                                            .font(.headline)
+                                            .lineLimit(1)
+                                        Text("Ana Paket Boyutu: \(selectedApp.formattedSize)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
                                 
                                 Button(action: {
                                     appState.uninstallSelectedApp()
                                 }) {
                                     HStack {
-                                        Image(systemName: "trash")
+                                        Image(systemName: "trash.fill")
                                         Text("Uygulamayı ve Kalıntıları Kaldır (\(formatSize(getTotalUninstallSize())))")
                                             .bold()
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity)
                                     .foregroundColor(.white)
                                     .background(Color.red)
-                                    .cornerRadius(6)
+                                    .cornerRadius(8)
                                 }
                                 .disabled(appState.isUninstallingApp)
                                 .buttonStyle(PlainButtonStyle())
@@ -225,6 +228,8 @@ struct UninstallerView: View {
                                                         Text(leftover.type)
                                                             .font(.system(size: 8))
                                                             .bold()
+                                                            .lineLimit(1)
+                                                            .layoutPriority(1)
                                                             .padding(.horizontal, 4)
                                                             .padding(.vertical, 1)
                                                             .foregroundColor(.red)
@@ -233,6 +238,8 @@ struct UninstallerView: View {
                                                         
                                                         Text(URL(fileURLWithPath: leftover.path).lastPathComponent)
                                                             .font(.system(size: 11, weight: .bold))
+                                                            .lineLimit(1)
+                                                            .truncationMode(.middle)
                                                     }
                                                     Text(leftover.path)
                                                         .font(.system(size: 9))

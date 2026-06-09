@@ -169,6 +169,8 @@ struct DeveloperCleanView: View {
                                                 VStack(alignment: .leading, spacing: 2) {
                                                     Text(item.name)
                                                         .font(.system(size: 11, weight: .bold))
+                                                        .lineLimit(1)
+                                                        .truncationMode(.middle)
                                                     Text(item.path)
                                                         .font(.system(size: 9))
                                                         .foregroundColor(.secondary)

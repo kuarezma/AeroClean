@@ -155,6 +155,8 @@ struct StartupSectionView: View {
                             Text(item.name)
                                 .font(.system(size: 11.5, weight: .bold))
                                 .foregroundColor(selectedId == item.id ? .white : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
                             Text(item.label)
                                 .font(.system(size: 9))
                                 .foregroundColor(selectedId == item.id ? .white.opacity(0.8) : .secondary)

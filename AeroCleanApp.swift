@@ -194,7 +194,7 @@ struct SidebarDiskWidget: View {
                     .font(.system(size: 9))
                     .foregroundColor(.secondary)
                 Spacer()
-                Text(String(format: "%%.1f", usedPercentage * 100))
+                Text(String(format: "%%%.1f", usedPercentage * 100))
                     .font(.system(size: 9))
                     .bold()
                     .foregroundColor(.primary)
