@@ -1,3 +1,73 @@
+// Browser Mock Fallback if running outside Electron
+if (typeof window.electronAPI === 'undefined') {
+  console.log("Running in browser mode. Mocking electronAPI...");
+  window.electronAPI = {
+    minimize: () => console.log("Window minimized"),
+    maximize: () => console.log("Window maximized/restored"),
+    close: () => console.log("Window closed"),
+    getDiskSpace: async () => {
+      return { free: 120 * 1024 * 1024 * 1024, total: 256 * 1024 * 1024 * 1024 };
+    },
+    scanPath: async (category, basePath) => {
+      await new Promise(r => setTimeout(r, 120)); // simulate scan delay
+      const mockSizes = {
+        systemCache: 2.4 * 1024 * 1024 * 1024,
+        systemLogs: 450 * 1024 * 1024,
+        trash: 5.1 * 1024 * 1024 * 1024,
+        timeMachineSnapshots: 0,
+        spotifyCache: 1.8 * 1024 * 1024 * 1024,
+        chromeCache: 950 * 1024 * 1024,
+        npmCache: 3.2 * 1024 * 1024 * 1024,
+        cargoCache: 8.4 * 1024 * 1024 * 1024,
+        pipCache: 150 * 1024 * 1024
+      };
+      const size = mockSizes[category] || 10 * 1024 * 1024;
+      return [
+        { path: `C:\\Mock\\${category}\\dosya_aktif_1.tmp`, name: 'dosya_aktif_1.tmp', size: size * 0.6, category, isDirectory: false, isSelected: true },
+        { path: `C:\\Mock\\${category}\\Gecici_Dosyalar`, name: 'Gecici_Dosyalar', size: size * 0.4, category, isDirectory: true, isSelected: true }
+      ];
+    },
+    deletePath: async (path) => {
+      console.log(`Deleted mock path: ${path}`);
+      return true;
+    },
+    scanLargeFiles: async () => {
+      await new Promise(r => setTimeout(r, 150));
+      return [
+        { path: 'C:\\Users\\Ugur\\Downloads\\film_arsivi.mp4', name: 'film_arsivi.mp4', size: 4.2 * 1024 * 1024 * 1024, category: 'downloads', isDirectory: false, isSelected: false },
+        { path: 'C:\\Users\\Ugur\\Desktop\\yedek_dosyalar_2026.zip', name: 'yedek_dosyalar_2026.zip', size: 1.8 * 1024 * 1024 * 1024, category: 'downloads', isDirectory: false, isSelected: false },
+        { path: 'C:\\Users\\Ugur\\Documents\\sanal_sistem.iso', name: 'sanal_sistem.iso', size: 6.5 * 1024 * 1024 * 1024, category: 'downloads', isDirectory: false, isSelected: false }
+      ];
+    },
+    scanStartups: async () => {
+      await new Promise(r => setTimeout(r, 100));
+      return [
+        { name: 'Spotify Web Helper', label: 'Spotify Web Helper', path: 'SpotifyStartup', type: 'Kullanıcı Başlangıcı (HKCU)', program: 'C:\\Users\\Ugur\\AppData\\Local\\Microsoft\\Update.exe', isEnabled: true },
+        { name: 'Discord Launcher', label: 'Discord Launcher', path: 'DiscordStartup', type: 'Kullanıcı Başlangıcı (HKCU)', program: 'C:\\Users\\Ugur\\AppData\\Local\\Discord\\app.exe', isEnabled: true },
+        { name: 'Microsoft OneDrive', label: 'Microsoft OneDrive', path: 'OneDriveStartup', type: 'Sistem Genel Ajanı (HKLM)', program: 'C:\\Windows\\System32\\onedrive.exe', isEnabled: false }
+      ];
+    },
+    toggleStartup: async (item) => {
+      console.log(`Toggled startup item: ${item.name}`);
+      return true;
+    },
+    scanApps: async () => {
+      await new Promise(r => setTimeout(r, 100));
+      return [
+        { id: 'chrome', name: 'Google Chrome Browser', path: 'C:\\Program Files\\Google\\Chrome', bundleId: 'chrome_uninstall', size: 450 * 1024 * 1024, version: '124.0.1' },
+        { id: 'vscode', name: 'Visual Studio Code', path: 'C:\\Program Files\\Microsoft VS Code', bundleId: 'vscode_uninstall', size: 680 * 1024 * 1024, version: '1.89.0' },
+        { id: 'spotify', name: 'Spotify App', path: 'C:\\Users\\Ugur\\AppData\\Roaming\\Spotify', bundleId: 'spotify_uninstall', size: 180 * 1024 * 1024, version: '1.2.3' }
+      ];
+    },
+    scanAppLeftovers: async (app) => {
+      return [
+        { path: `C:\\Users\\Ugur\\AppData\\Local\\${app.name}\\Cache`, size: 45 * 1024 * 1024, type: 'Önbellek/Yerel Veri', isSelected: true },
+        { path: `C:\\Users\\Ugur\\AppData\\Roaming\\${app.name}\\Settings`, size: 12 * 1024 * 1024, type: 'Uygulama Ayarları', isSelected: true }
+      ];
+    }
+  };
+}
+
 // State parameters
 let diskSpace = { free: 0, total: 0 };
 let categories = [];
