@@ -121,7 +121,7 @@ class AppState: ObservableObject {
                            let htmlUrl = json["html_url"] as? String {
                             
                             let cleanLatest = tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
-                            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
+                            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.1"
                             let cleanCurrent = currentVersion.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
                             
                             if cleanLatest.compare(cleanCurrent, options: .numeric) == .orderedDescending {

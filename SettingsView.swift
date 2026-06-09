@@ -141,7 +141,7 @@ struct SettingsView: View {
                 
                 // About app
                 VStack(spacing: 8) {
-                    let versionStr = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0"
+                    let versionStr = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.1"
                     Text("AeroClean v\(versionStr)")
                         .font(.headline)
                     Text("Uğur Yaşayan tarafından üretildi")
